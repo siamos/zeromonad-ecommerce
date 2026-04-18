@@ -1,0 +1,66 @@
+services:
+    app:
+        image: ghcr.io/${GITHUB_REPOSITORY:-zeromonad/ecommerce}:latest
+        build:
+            context: .
+            dockerfile: Dockerfile
+        environment:
+            APP_NAME: "${APP_NAME:-ZeroMonad}"
+            APP_ENV: production
+            APP_KEY: "${APP_KEY}"
+            APP_DEBUG: "false"
+            APP_URL: "${APP_URL}"
+            DB_HOST: mysql
+            DB_DATABASE: "${DB_DATABASE:-zeromonad}"
+            DB_USERNAME: "${DB_USERNAME}"
+            DB_PASSWORD: "${DB_PASSWORD}"
+            REDIS_HOST: redis
+            QUEUE_CONNECTION: redis
+            CACHE_STORE: redis
+            SESSION_DRIVER: redis
+            OPENAI_API_KEY: "${OPENAI_API_KEY}"
+            STRIPE_KEY: "${STRIPE_KEY}"
+            STRIPE_SECRET: "${STRIPE_SECRET}"
+            STRIPE_WEBHOOK_SECRET: "${STRIPE_WEBHOOK_SECRET}"
+        volumes:
+            - storage_data:/var/www/html/storage/app
+        ports:
+            - '80:80'
+        depends_on:
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        restart: unless-stopped
+
+    mysql:
+        image: mysql:8.0
+        environment:
+            MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+            MYSQL_DATABASE: "${DB_DATABASE:-zeromonad}"
+            MYSQL_USER: "${DB_USERNAME}"
+            MYSQL_PASSWORD: "${DB_PASSWORD}"
+        volumes:
+            - mysql_data:/var/lib/mysql
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+
+    redis:
+        image: redis:7-alpine
+        volumes:
+            - redis_data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 3s
+            retries: 3
+        restart: unless-stopped
+
+volumes:
+    storage_data:
+    mysql_data:
+    redis_data:

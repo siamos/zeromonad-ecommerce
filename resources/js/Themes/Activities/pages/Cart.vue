@@ -1,0 +1,155 @@
+<template>
+  <Layout>
+    <Head title="Your Cart" />
+
+    <div class="max-w-5xl mx-auto px-4 py-10">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">Your Cart</h1>
+
+      <div v-if="cart && cart.items?.length" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Items -->
+        <div class="lg:col-span-2 space-y-4">
+          <div
+            v-for="item in cart.items"
+            :key="item.id"
+            class="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 flex gap-4"
+          >
+            <img
+              :src="item.product.image_url ?? '/images/activity-placeholder.png'"
+              :alt="item.product.name"
+              class="w-20 h-20 rounded-xl object-cover shrink-0"
+            />
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-gray-900 truncate">{{ item.product.name }}</h3>
+              <div v-if="item.product.activity_detail?.event_date" class="text-sm text-emerald-600 font-medium mt-0.5">
+                {{ formatDate(item.product.activity_detail.event_date) }}
+              </div>
+              <div v-if="item.product.activity_detail?.location" class="text-xs text-gray-500 mt-0.5">
+                {{ item.product.activity_detail.location }}
+              </div>
+              <div class="flex items-center justify-between mt-3">
+                <div class="flex items-center gap-2">
+                  <button
+                    @click="updateQty(item, item.quantity - 1)"
+                    class="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-emerald-500 text-sm"
+                  >−</button>
+                  <span class="text-sm font-medium w-4 text-center">{{ item.quantity }}</span>
+                  <button
+                    @click="updateQty(item, item.quantity + 1)"
+                    class="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-emerald-500 text-sm"
+                  >+</button>
+                </div>
+                <div class="flex items-center gap-4">
+                  <span class="font-bold text-gray-900">{{ formatPrice(item.product.price * item.quantity) }}</span>
+                  <Link :href="route('cart.remove', item.id)" method="delete" as="button"
+                    class="text-gray-400 hover:text-red-500 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 sticky top-6 space-y-4">
+            <h2 class="font-bold text-gray-900 text-lg">Order Summary</h2>
+
+            <!-- Coupon -->
+            <form @submit.prevent="applyCoupon" class="flex gap-2">
+              <input
+                v-model="couponCode"
+                type="text"
+                placeholder="Coupon code"
+                class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <button type="submit" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                Apply
+              </button>
+            </form>
+
+            <div v-if="cart.coupon" class="flex items-center justify-between text-sm text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
+              <span>Coupon: {{ cart.coupon.code }}</span>
+              <span>−{{ formatPrice(cart.coupon.discount_value) }}</span>
+            </div>
+
+            <div class="space-y-2 text-sm border-t border-gray-100 pt-4">
+              <div class="flex justify-between text-gray-600">
+                <span>Subtotal</span>
+                <span>{{ formatPrice(cart.subtotal) }}</span>
+              </div>
+              <div v-if="cart.discount_amount > 0" class="flex justify-between text-emerald-600">
+                <span>Discount</span>
+                <span>−{{ formatPrice(cart.discount_amount) }}</span>
+              </div>
+              <div class="flex justify-between font-bold text-gray-900 text-base pt-2 border-t border-gray-100">
+                <span>Total</span>
+                <span>{{ formatPrice(cart.total) }}</span>
+              </div>
+            </div>
+
+            <Link
+              :href="route('checkout.index')"
+              class="block w-full text-center bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition-colors"
+            >
+              Proceed to Checkout
+            </Link>
+
+            <Link :href="route('shop')" class="block text-center text-sm text-gray-500 hover:text-emerald-600">
+              ← Continue Browsing
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty cart -->
+      <div v-else class="text-center py-20">
+        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Your cart is empty</h2>
+        <p class="text-gray-500 mb-6">Discover exciting activities and book your next adventure.</p>
+        <Link :href="route('shop')"
+          class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-emerald-700 transition-colors">
+          Browse Activities
+        </Link>
+      </div>
+    </div>
+  </Layout>
+</template>
+
+<script setup>
+import { Head, Link, router, usePage } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import Layout from '../Layout.vue'
+
+const props  = defineProps({ cart: Object })
+const page   = usePage()
+const couponCode = ref('')
+
+function formatPrice(price) {
+  return new Intl.NumberFormat('el-GR', {
+    style: 'currency',
+    currency: page.props.currency ?? 'EUR',
+  }).format(price)
+}
+
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('el-GR', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function updateQty(item, qty) {
+  if (qty < 1) {
+    router.delete(route('cart.remove', item.id))
+  } else {
+    router.patch(route('cart.update', item.id), { quantity: qty }, { preserveScroll: true })
+  }
+}
+
+function applyCoupon() {
+  router.post(route('cart.coupon'), { code: couponCode.value }, { preserveScroll: true })
+}
+</script>
