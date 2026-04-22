@@ -4,26 +4,52 @@ namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\ProductResource\Pages;
 use App\Models\Product;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
-    public static function getNavigationIcon(): string|\BackedEnum|null { return 'heroicon-o-cube'; }
+
+    public static function getNavigationIcon(): string|\BackedEnum|null
+    {
+        return 'heroicon-o-cube';
+    }
+
     protected static ?int $navigationSort = 30;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Forms\Components\Section::make('Product Details')->schema([
-                Forms\Components\TextInput::make('name')->required()->live(onBlur: true)
-                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('slug', str($state)->slug())),
+            Section::make('Product Details')->schema([
+                Tabs::make('Name')->tabs([
+                    Tabs\Tab::make('English')->schema([
+                        Forms\Components\TextInput::make('name.en')
+                            ->label('Name (EN)')
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn ($state, Set $set) => $set('slug', str($state)->slug())),
+                    ]),
+                    Tabs\Tab::make('Greek (Ελληνικά)')->schema([
+                        Forms\Components\TextInput::make('name.el')->label('Name (EL)'),
+                    ]),
+                ])->columnSpanFull(),
                 Forms\Components\TextInput::make('slug')->required()->unique(ignoreRecord: true),
                 Forms\Components\Select::make('category_id')
                     ->relationship('category', 'name')
@@ -38,23 +64,63 @@ class ProductResource extends Resource
                 Forms\Components\Toggle::make('featured'),
             ])->columns(2),
 
-            Forms\Components\Section::make('Description')->schema([
-                Forms\Components\TextInput::make('short_description')->maxLength(500),
-                Forms\Components\RichEditor::make('description')->columnSpanFull(),
+            Section::make('Description')->schema([
+                Tabs::make('Description Translations')->tabs([
+                    Tabs\Tab::make('English')->schema([
+                        Forms\Components\TextInput::make('short_description.en')->label('Short Description (EN)')->maxLength(500)->columnSpanFull(),
+                        Forms\Components\RichEditor::make('description.en')->label('Description (EN)')->columnSpanFull(),
+                    ]),
+                    Tabs\Tab::make('Greek (Ελληνικά)')->schema([
+                        Forms\Components\TextInput::make('short_description.el')->label('Short Description (EL)')->maxLength(500)->columnSpanFull(),
+                        Forms\Components\RichEditor::make('description.el')->label('Description (EL)')->columnSpanFull(),
+                    ]),
+                ])->columnSpanFull(),
             ]),
 
-            Forms\Components\Section::make('Activity Details')
-                ->description('Only needed when using the Activities theme')
+            Section::make('Booking Details')
+                ->description('Only needed when using the Booking Platform theme')
                 ->collapsed()
                 ->schema([
-                    Forms\Components\DateTimePicker::make('activity_detail.event_date'),
-                    Forms\Components\TextInput::make('activity_detail.location'),
-                    Forms\Components\TextInput::make('activity_detail.capacity')->numeric(),
-                    Forms\Components\TextInput::make('activity_detail.duration_minutes')->numeric()->suffix('min'),
-                    Forms\Components\TextInput::make('activity_detail.booking_cutoff_hours')->numeric()->suffix('h'),
+                    Forms\Components\Select::make('activity_detail.booking_type')
+                        ->label('Booking Type')
+                        ->options([
+                            'activity' => 'Activity',
+                            'accommodation' => 'Accommodation',
+                            'vehicle' => 'Vehicle',
+                            'tour' => 'Tour',
+                            'event' => 'Event',
+                        ])
+                        ->default('activity')
+                        ->live()
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('activity_detail.location')
+                        ->label('Location'),
+                    Forms\Components\TextInput::make('activity_detail.capacity')
+                        ->label('Capacity')
+                        ->numeric(),
+                    Forms\Components\DateTimePicker::make('activity_detail.event_date')
+                        ->label('Event Date')
+                        ->visible(fn (Get $get) => in_array($get('activity_detail.booking_type'), ['activity', 'tour', 'event', null])),
+                    Forms\Components\TextInput::make('activity_detail.duration_minutes')
+                        ->label('Duration')
+                        ->numeric()
+                        ->suffix('min')
+                        ->visible(fn (Get $get) => in_array($get('activity_detail.booking_type'), ['activity', 'tour', 'event', null])),
+                    Forms\Components\TextInput::make('activity_detail.booking_cutoff_hours')
+                        ->label('Booking Cutoff')
+                        ->numeric()
+                        ->suffix('h before')
+                        ->visible(fn (Get $get) => in_array($get('activity_detail.booking_type'), ['activity', 'tour', 'event', null])),
+                    Forms\Components\KeyValue::make('activity_detail.extra_attributes')
+                        ->label('Extra Attributes')
+                        ->keyLabel('Attribute')
+                        ->valueLabel('Value')
+                        ->helperText('e.g. bedrooms / 3, bathrooms / 2 for accommodation; vehicle_type / SUV, transmission / automatic for vehicle')
+                        ->columnSpanFull()
+                        ->visible(fn (Get $get) => in_array($get('activity_detail.booking_type'), ['accommodation', 'vehicle'])),
                 ])->columns(2),
 
-            Forms\Components\Section::make('Images')->schema([
+            Section::make('Images')->schema([
                 Forms\Components\SpatieMediaLibraryFileUpload::make('images')
                     ->collection('product-images')
                     ->multiple()
@@ -73,16 +139,26 @@ class ProductResource extends Resource
                     ->collection('product-images')
                     ->conversion('thumb')
                     ->label(''),
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable()->limit(40),
+                Tables\Columns\TextColumn::make('name')
+                    ->getStateUsing(fn ($record) => $record->getTranslation('name', 'en'))
+                    ->searchable(query: fn ($query, $search) => $query
+                        ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name, '$.en')) LIKE ?", ["%{$search}%"])
+                        ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name, '$.el')) LIKE ?", ["%{$search}%"])
+                    )
+                    ->sortable(query: fn ($query, $direction) => $query
+                        ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name, '$.en')) {$direction}")
+                    )
+                    ->limit(40),
                 Tables\Columns\TextColumn::make('category.name')->badge()->sortable(),
                 Tables\Columns\TextColumn::make('price')->money('EUR')->sortable(),
                 Tables\Columns\TextColumn::make('stock')->sortable(),
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors([
-                        'warning'  => 'draft',
-                        'success'  => 'published',
-                        'gray'     => 'archived',
-                    ]),
+                Tables\Columns\TextColumn::make('status')->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'draft' => 'warning',
+                        'published' => 'success',
+                        'archived' => 'gray',
+                        default => null,
+                    }),
                 Tables\Columns\IconColumn::make('featured')->boolean()->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')->date()->sortable()->toggleable(),
             ])
@@ -94,14 +170,14 @@ class ProductResource extends Resource
                 TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ]);
     }
@@ -109,13 +185,13 @@ class ProductResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListProducts::route('/'),
+            'index' => Pages\ListProducts::route('/'),
             'create' => Pages\CreateProduct::route('/create'),
-            'edit'   => Pages\EditProduct::route('/{record}/edit'),
+            'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->withTrashed();
     }

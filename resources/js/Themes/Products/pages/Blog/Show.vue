@@ -2,12 +2,12 @@
   <Layout>
     <Head :title="post.title" />
     <div class="max-w-3xl mx-auto px-4 py-10">
-      <Link :href="route('blog.index')" class="text-sm text-indigo-600 hover:underline mb-6 block">← Back to Blog</Link>
+      <Link :href="route('blog.index')" class="text-sm text-indigo-600 hover:underline mb-6 block">{{ t('blog.back_to_blog') }}</Link>
 
       <div class="flex items-center gap-2 mb-4">
         <span v-if="post.ai_generated"
           class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
-          AI Generated
+          {{ t('blog.ai_generated') }}
         </span>
         <span class="text-sm text-gray-400">{{ post.published_at }}</span>
       </div>
@@ -25,6 +25,10 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3'
 import Layout from '../../Layout.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
+const route = window.route
 
 defineProps({ post: Object })
 </script>

@@ -6,20 +6,12 @@
 
         <!-- Gallery -->
         <div>
-          <img
-            :src="activeImage ?? product.images?.[0] ?? '/images/product-placeholder.png'"
-            :alt="product.name"
-            class="w-full rounded-2xl object-cover aspect-square"
-          />
+          <img :src="activeImage ?? product.images?.[0] ?? '/images/product-placeholder.svg'" :alt="product.name"
+            class="w-full rounded-2xl object-cover aspect-square" />
           <div v-if="product.images?.length > 1" class="flex gap-3 mt-4">
-            <img
-              v-for="(img, i) in product.images"
-              :key="i"
-              :src="img"
-              @click="activeImage = img"
+            <img v-for="(img, i) in product.images" :key="i" :src="img" @click="activeImage = img"
               class="w-20 h-20 rounded-xl object-cover cursor-pointer border-2 transition-colors"
-              :class="activeImage === img ? 'border-indigo-500' : 'border-transparent'"
-            />
+              :class="activeImage === img ? 'border-indigo-500' : 'border-transparent'" />
           </div>
         </div>
 
@@ -41,20 +33,17 @@
 
           <div class="flex items-center gap-4">
             <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-              <button @click="qty = Math.max(1, qty - 1)" class="px-4 py-3 hover:bg-gray-50 transition-colors">−</button>
+              <button @click="qty = Math.max(1, qty - 1)" class="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer">−</button>
               <span class="px-4 py-3 border-x border-gray-200 min-w-[3rem] text-center">{{ qty }}</span>
-              <button @click="qty++" class="px-4 py-3 hover:bg-gray-50 transition-colors">+</button>
+              <button @click="qty++" class="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer">+</button>
             </div>
-            <button
-              @click="addToCart"
-              :disabled="!product.in_stock"
-              class="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              {{ product.in_stock ? 'Add to Cart' : 'Out of Stock' }}
+            <button @click="addToCart" :disabled="!product.in_stock"
+              class="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors cursor-pointer">
+              {{ product.in_stock ? t('product.add_to_cart') : t('product.out_of_stock') }}
             </button>
           </div>
 
-          <div v-if="product.sku" class="mt-6 text-sm text-gray-500">SKU: {{ product.sku }}</div>
+          <div v-if="product.sku" class="mt-6 text-sm text-gray-500">{{ t('product.sku') }}: {{ product.sku }}</div>
           <div v-if="product.tags?.length" class="flex flex-wrap gap-2 mt-4">
             <span v-for="tag in product.tags" :key="tag.id"
               class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
@@ -66,10 +55,9 @@
 
       <!-- Reviews -->
       <div class="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Existing reviews -->
         <div>
           <h2 class="text-xl font-bold text-gray-900 mb-6">
-            Reviews <span v-if="approvedReviews.length" class="text-base font-normal text-gray-400">({{ approvedReviews.length }})</span>
+            {{ t('product.reviews') }} <span v-if="approvedReviews.length" class="text-base font-normal text-gray-400">({{ approvedReviews.length }})</span>
           </h2>
           <div v-if="approvedReviews.length" class="space-y-4">
             <div v-for="review in approvedReviews" :key="review.id"
@@ -82,10 +70,9 @@
               <p class="text-gray-600 text-sm leading-relaxed">{{ review.body }}</p>
             </div>
           </div>
-          <p v-else class="text-gray-400 text-sm">No reviews yet. Be the first!</p>
+          <p v-else class="text-gray-400 text-sm">{{ t('product.no_reviews') }}</p>
         </div>
 
-        <!-- Review form -->
         <ReviewForm :product-id="product.id" />
       </div>
     </div>
@@ -97,7 +84,12 @@ import { Head, router, usePage } from '@inertiajs/vue3'
 import { ref, computed } from 'vue'
 import Layout from '../Layout.vue'
 import ReviewForm from '../components/ReviewForm.vue'
+import { useI18n } from '@/composables/useI18n'
+import { useCartModal } from '@/composables/useCartModal'
 
+const { t } = useI18n()
+const { openModal } = useCartModal()
+const route = window.route
 const props = defineProps({ product: Object })
 const approvedReviews = computed(() => props.product.reviews?.filter(r => r.status === 'approved') ?? [])
 const page = usePage()
@@ -112,6 +104,9 @@ function formatPrice(price) {
 }
 
 function addToCart() {
-  router.post(route('cart.add'), { product_id: props.product.id, quantity: qty.value })
+  router.post(route('cart.add'), { product_id: props.product.id, quantity: qty.value }, {
+    preserveScroll: true,
+    onSuccess: () => openModal(props.product.name),
+  })
 }
 </script>

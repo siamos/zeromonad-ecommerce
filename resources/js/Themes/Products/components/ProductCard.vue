@@ -1,11 +1,8 @@
 <template>
   <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100">
     <Link :href="route('product.show', product.slug)">
-      <img
-        :src="product.image_url ?? '/images/product-placeholder.png'"
-        :alt="product.name"
-        class="w-full h-48 object-cover"
-      />
+      <img :src="product.image_url ?? '/images/product-placeholder.svg'" :alt="product.name"
+        class="w-full h-48 object-cover" />
     </Link>
     <div class="p-4">
       <Link :href="route('product.show', product.slug)">
@@ -21,12 +18,9 @@
             {{ formatPrice(product.compare_price) }}
           </span>
         </div>
-        <button
-          @click="addToCart(product.id)"
-          :disabled="!product.in_stock"
-          class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
-          {{ product.in_stock ? 'Add to Cart' : 'Out of Stock' }}
+        <button @click="addToCart(product.id)" :disabled="!product.in_stock"
+          class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors cursor-pointer">
+          {{ product.in_stock ? t('card.add_to_cart') : t('card.out_of_stock') }}
         </button>
       </div>
     </div>
@@ -35,12 +29,15 @@
 
 <script setup>
 import { Link, router, usePage } from '@inertiajs/vue3'
+import { useI18n } from '@/composables/useI18n'
+import { useCartModal } from '@/composables/useCartModal'
 
-const props = defineProps({
-  product: Object,
-})
-
+const { t } = useI18n()
+const { openModal } = useCartModal()
+const route = window.route
 const page = usePage()
+
+const props = defineProps({ product: Object })
 
 function formatPrice(price) {
   return new Intl.NumberFormat('el-GR', {
@@ -50,6 +47,9 @@ function formatPrice(price) {
 }
 
 function addToCart(productId) {
-  router.post(route('cart.add'), { product_id: productId, quantity: 1 })
+  router.post(route('cart.add'), { product_id: productId, quantity: 1 }, {
+    preserveScroll: true,
+    onSuccess: () => openModal(props.product.name),
+  })
 }
 </script>

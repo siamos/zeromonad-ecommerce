@@ -3,15 +3,13 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Admin\Pages\Dashboard;
-use App\Filament\Admin\Pages\SiteSettings;
+use App\Http\Middleware\RequireRole;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -27,10 +25,11 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->id('admin')
             ->path('admin')
+            ->default()
             ->login()
             ->colors([
                 'primary' => Color::Indigo,
-                'danger'  => Color::Rose,
+                'danger' => Color::Rose,
                 'success' => Color::Emerald,
                 'warning' => Color::Amber,
             ])
@@ -63,6 +62,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                RequireRole::class.':admin',
             ])
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->renderHook(

@@ -11,17 +11,34 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Schema;
 
 class SiteSettings extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    public static function getNavigationIcon(): string|\BackedEnum|null { return 'heroicon-o-cog-6-tooth'; }
-    public static function getNavigationLabel(): string { return 'Site Settings'; }
-    public static function getNavigationGroup(): ?string { return 'Settings'; }
+    public static function getNavigationIcon(): string|\BackedEnum|null
+    {
+        return 'heroicon-o-cog-6-tooth';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Site Settings';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Settings';
+    }
+
     protected static ?int $navigationSort = 90;
-    public function getView(): string { return 'filament.admin.pages.site-settings'; }
+
+    public function getView(): string
+    {
+        return 'filament.admin.pages.site-settings';
+    }
 
     public ?array $data = [];
 
@@ -30,10 +47,10 @@ class SiteSettings extends Page implements HasForms
         $settings = app(GeneralSettings::class);
 
         $this->form->fill([
-            'site_name'           => $settings->site_name,
-            'active_theme'        => $settings->active_theme,
-            'currency'            => $settings->currency,
-            'tax_rate'            => $settings->tax_rate,
+            'site_name' => $settings->site_name,
+            'active_theme' => $settings->active_theme,
+            'currency' => $settings->currency,
+            'tax_rate' => $settings->tax_rate,
             'low_stock_threshold' => $settings->low_stock_threshold,
         ]);
     }
@@ -55,20 +72,21 @@ class SiteSettings extends Page implements HasForms
                 TextInput::make('currency')->required()->maxLength(3)->label('Currency (ISO code)'),
                 TextInput::make('tax_rate')->numeric()->suffix('%')->label('Tax Rate'),
                 TextInput::make('low_stock_threshold')->numeric()->label('Low Stock Alert Threshold'),
+                Actions::make($this->getFormActions()),
             ])
             ->statePath('data');
     }
 
     public function save(): void
     {
-        $data     = $this->form->getState();
+        $data = $this->form->getState();
         $settings = app(GeneralSettings::class);
 
         $oldTheme = $settings->active_theme;
 
-        $settings->site_name           = $data['site_name'];
-        $settings->currency            = $data['currency'];
-        $settings->tax_rate            = (float) $data['tax_rate'];
+        $settings->site_name = $data['site_name'];
+        $settings->currency = $data['currency'];
+        $settings->tax_rate = (float) $data['tax_rate'];
         $settings->low_stock_threshold = (int) $data['low_stock_threshold'];
         $settings->save();
 

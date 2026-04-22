@@ -1,23 +1,23 @@
 <template>
   <Layout>
-    <Head title="My Account" />
+    <Head :title="t('account.title')" />
     <div class="max-w-4xl mx-auto px-4 py-10">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">My Account</h1>
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">{{ t('account.title') }}</h1>
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Sidebar -->
         <nav class="space-y-1">
           <Link :href="route('account.index')"
             class="block px-4 py-2 rounded-lg text-sm font-medium text-indigo-600 bg-indigo-50">
-            Overview
+            {{ t('account.overview') }}
           </Link>
           <Link :href="route('account.orders')"
             class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-            Orders
+            {{ t('account.orders') }}
           </Link>
           <Link :href="route('logout')" method="post" as="button"
             class="block w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
-            Sign Out
+            {{ t('account.sign_out_long') }}
           </Link>
         </nav>
 
@@ -25,14 +25,14 @@
         <div class="lg:col-span-3 space-y-6">
           <!-- Account details -->
           <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Account Details</h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ t('account.account_details') }}</h2>
             <dl class="space-y-4">
               <div>
-                <dt class="text-sm text-gray-500">Name</dt>
+                <dt class="text-sm text-gray-500">{{ t('account.name') }}</dt>
                 <dd class="font-medium text-gray-900">{{ $page.props.auth.user?.name }}</dd>
               </div>
               <div>
-                <dt class="text-sm text-gray-500">Email</dt>
+                <dt class="text-sm text-gray-500">{{ t('account.email') }}</dt>
                 <dd class="font-medium text-gray-900">{{ $page.props.auth.user?.email }}</dd>
               </div>
             </dl>
@@ -41,7 +41,7 @@
           <!-- Orders -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-100">
             <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-gray-900">Orders</h2>
+              <h2 class="text-lg font-semibold text-gray-900">{{ t('account.orders') }}</h2>
             </div>
 
             <div v-if="orders?.data?.length" class="divide-y divide-gray-100">
@@ -66,27 +66,26 @@
                   </div>
                   <Link :href="route('account.orders.show', order.id)"
                     class="text-sm text-indigo-600 hover:text-indigo-800 font-medium shrink-0">
-                    View →
+                    {{ t('account.view') }}
                   </Link>
                 </div>
               </div>
             </div>
 
             <div v-else class="text-center py-12 text-gray-400">
-              <p class="font-medium">No orders yet</p>
+              <p class="font-medium">{{ t('account.no_orders') }}</p>
               <Link :href="route('shop')" class="mt-3 inline-block text-sm text-indigo-600 hover:underline">
-                Start shopping →
+                {{ t('account.start_shopping') }}
               </Link>
             </div>
 
             <!-- Pagination -->
             <div v-if="orders?.last_page > 1" class="px-6 py-4 border-t border-gray-100 flex justify-center gap-2">
-              <Link v-for="link in orders.links" :key="link.label" :href="link.url ?? '#'"
+              <a v-for="link in orders.links" :key="link.label" :href="link.url ?? '#'"
                 :class="['px-3 py-1.5 rounded-lg text-sm border', link.active
                   ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300']">
-                <span v-html="link.label" />
-              </Link>
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300']"
+                v-html="link.label" />
             </div>
           </div>
         </div>
@@ -98,6 +97,10 @@
 <script setup>
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import Layout from '../Layout.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
+const route = window.route
 
 const props = defineProps({ orders: Object })
 const page = usePage()

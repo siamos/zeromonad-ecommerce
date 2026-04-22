@@ -6,6 +6,11 @@
 .phpactor.json
 .phpunit.result.cache
 /.cursor/
+/.agents/
+/.ai/
+/.claude/
+/.codex/
+/.github/skills/
 /.idea
 /.nova
 /.phpunit.cache

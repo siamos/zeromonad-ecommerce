@@ -2,10 +2,17 @@
 
 namespace App\Filament\Admin\Resources;
 
+use App\Actions\Blog\GenerateBlogPost;
 use App\Filament\Admin\Resources\BlogPostResource\Pages;
 use App\Models\BlogPost;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -13,15 +20,18 @@ use Filament\Tables\Table;
 class BlogPostResource extends Resource
 {
     protected static ?string $model = BlogPost::class;
-    public static function getNavigationIcon(): string|\BackedEnum|null { return 'heroicon-o-document-text'; }
+
+    public static function getNavigationIcon(): string|\BackedEnum|null
+    {
+        return 'heroicon-o-document-text';
+    }
+
     protected static ?int $navigationSort = 60;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Forms\Components\Section::make()->schema([
-                Forms\Components\TextInput::make('title')->required()->live(onBlur: true)
-                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('slug', str($state)->slug())),
+            Section::make()->schema([
                 Forms\Components\TextInput::make('slug')->required()->unique(ignoreRecord: true),
                 Forms\Components\Select::make('status')
                     ->options(['draft' => 'Draft', 'published' => 'Published'])
@@ -30,11 +40,24 @@ class BlogPostResource extends Resource
                 Forms\Components\Toggle::make('ai_generated')->disabled(),
             ])->columns(2),
 
-            Forms\Components\Section::make()->schema([
-                Forms\Components\TextInput::make('featured_image')->url()->columnSpanFull(),
-                Forms\Components\Textarea::make('excerpt')->rows(2)->columnSpanFull(),
-                Forms\Components\RichEditor::make('content')->columnSpanFull(),
-            ]),
+            Tabs::make('Translations')->tabs([
+                Tabs\Tab::make('English')->schema([
+                    Forms\Components\TextInput::make('title.en')
+                        ->label('Title (EN)')
+                        ->required()
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(fn ($state, Set $set) => $set('slug', str($state)->slug())),
+                    Forms\Components\TextInput::make('featured_image')->url()->label('Featured Image URL'),
+                    Forms\Components\Textarea::make('excerpt.en')->label('Excerpt (EN)')->rows(2),
+                    Forms\Components\RichEditor::make('content.en')->label('Content (EN)')->columnSpanFull(),
+                ])->columns(2),
+
+                Tabs\Tab::make('Greek (Ελληνικά)')->schema([
+                    Forms\Components\TextInput::make('title.el')->label('Title (EL)'),
+                    Forms\Components\Textarea::make('excerpt.el')->label('Excerpt (EL)')->rows(2),
+                    Forms\Components\RichEditor::make('content.el')->label('Content (EL)')->columnSpanFull(),
+                ])->columns(2),
+            ])->columnSpanFull(),
         ]);
     }
 
@@ -42,9 +65,22 @@ class BlogPostResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('title')->searchable()->sortable()->limit(50),
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors(['warning' => 'draft', 'success' => 'published']),
+                Tables\Columns\TextColumn::make('title')
+                    ->getStateUsing(fn ($record) => $record->getTranslation('title', 'en'))
+                    ->searchable(query: fn ($query, $search) => $query
+                        ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(title, '$.en')) LIKE ?", ["%{$search}%"])
+                        ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(title, '$.el')) LIKE ?", ["%{$search}%"])
+                    )
+                    ->sortable(query: fn ($query, $direction) => $query
+                        ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(title, '$.en')) {$direction}")
+                    )
+                    ->limit(50),
+                Tables\Columns\TextColumn::make('status')->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'draft' => 'warning',
+                        'published' => 'success',
+                        default => null,
+                    }),
                 Tables\Columns\IconColumn::make('ai_generated')->boolean()->label('AI'),
                 Tables\Columns\TextColumn::make('published_at')->date()->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->date()->sortable()->toggleable(),
@@ -55,7 +91,7 @@ class BlogPostResource extends Resource
                 Tables\Filters\TernaryFilter::make('ai_generated')->label('AI Generated'),
             ])
             ->headerActions([
-                Tables\Actions\Action::make('generate')
+                Action::make('generate')
                     ->label('Generate AI Post')
                     ->icon('heroicon-o-sparkles')
                     ->color('warning')
@@ -63,12 +99,12 @@ class BlogPostResource extends Resource
                         Forms\Components\TextInput::make('topic')->placeholder('Leave blank for random topic'),
                     ])
                     ->action(function (array $data) {
-                        \App\Actions\Blog\GenerateBlogPost::run($data['topic'] ?: null);
+                        GenerateBlogPost::run($data['topic'] ?: null);
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -76,9 +112,9 @@ class BlogPostResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListBlogPosts::route('/'),
+            'index' => Pages\ListBlogPosts::route('/'),
             'create' => Pages\CreateBlogPost::route('/create'),
-            'edit'   => Pages\EditBlogPost::route('/{record}/edit'),
+            'edit' => Pages\EditBlogPost::route('/{record}/edit'),
         ];
     }
 }

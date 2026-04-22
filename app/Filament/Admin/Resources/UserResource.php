@@ -4,8 +4,14 @@ namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\UserResource\Pages;
 use App\Models\User;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -14,13 +20,18 @@ use Illuminate\Support\Facades\Hash;
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
-    public static function getNavigationIcon(): string|\BackedEnum|null { return 'heroicon-o-users'; }
+
+    public static function getNavigationIcon(): string|\BackedEnum|null
+    {
+        return 'heroicon-o-users';
+    }
+
     protected static ?int $navigationSort = 10;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Forms\Components\Section::make()->schema([
+            Section::make()->schema([
                 Forms\Components\TextInput::make('name')->required()->maxLength(255),
                 Forms\Components\TextInput::make('email')->email()->required()->unique(ignoreRecord: true),
                 Forms\Components\TextInput::make('password')
@@ -51,18 +62,18 @@ class UserResource extends Resource
                     ->multiple(),
             ])
             ->actions([
-                Tables\Actions\Action::make('impersonate')
+                Action::make('impersonate')
                     ->label('Impersonate')
                     ->icon('heroicon-o-identification')
                     ->color('warning')
-                    ->visible(fn (User $record) => !$record->hasRole('admin') && auth()->user()->canImpersonate())
-                    ->action(fn (User $record) => redirect(route('impersonate', $record->id))),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                    ->visible(fn (User $record) => ! $record->hasRole('admin') && auth()->user()->canImpersonate())
+                    ->action(fn (User $record) => redirect(route('impersonate', ['id' => $record->id]))),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -70,9 +81,9 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListUsers::route('/'),
+            'index' => Pages\ListUsers::route('/'),
             'create' => Pages\CreateUser::route('/create'),
-            'edit'   => Pages\EditUser::route('/{record}/edit'),
+            'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
 }

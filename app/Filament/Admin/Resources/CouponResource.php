@@ -4,8 +4,15 @@ namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\CouponResource\Pages;
 use App\Models\Coupon;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -13,20 +20,25 @@ use Filament\Tables\Table;
 class CouponResource extends Resource
 {
     protected static ?string $model = Coupon::class;
-    public static function getNavigationIcon(): string|\BackedEnum|null { return 'heroicon-o-ticket'; }
+
+    public static function getNavigationIcon(): string|\BackedEnum|null
+    {
+        return 'heroicon-o-ticket';
+    }
+
     protected static ?int $navigationSort = 50;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Forms\Components\Section::make()->schema([
+            Section::make()->schema([
                 Forms\Components\TextInput::make('code')->required()->unique(ignoreRecord: true)
-                    ->afterStateUpdated(fn (Forms\Set $set, $state) => $set('code', strtoupper($state))),
+                    ->afterStateUpdated(fn (Set $set, $state) => $set('code', strtoupper($state))),
                 Forms\Components\Select::make('type')
                     ->options(['percentage' => 'Percentage', 'fixed' => 'Fixed Amount'])
-                    ->required()->reactive(),
+                    ->required()->live(),
                 Forms\Components\TextInput::make('value')->numeric()->required()
-                    ->suffix(fn (Forms\Get $get) => $get('type') === 'percentage' ? '%' : '€'),
+                    ->suffix(fn (Get $get) => $get('type') === 'percentage' ? '%' : '€'),
                 Forms\Components\TextInput::make('minimum_amount')->numeric()->prefix('€'),
                 Forms\Components\TextInput::make('max_uses')->numeric(),
                 Forms\Components\DateTimePicker::make('expires_at'),
@@ -48,12 +60,12 @@ class CouponResource extends Resource
                 Tables\Columns\IconColumn::make('is_active')->boolean(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -61,9 +73,9 @@ class CouponResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCoupons::route('/'),
+            'index' => Pages\ListCoupons::route('/'),
             'create' => Pages\CreateCoupon::route('/create'),
-            'edit'   => Pages\EditCoupon::route('/{record}/edit'),
+            'edit' => Pages\EditCoupon::route('/{record}/edit'),
         ];
     }
 }

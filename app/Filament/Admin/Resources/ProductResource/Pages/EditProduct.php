@@ -1,10 +1,26 @@
 <?php
+
 namespace App\Filament\Admin\Resources\ProductResource\Pages;
+
 use App\Filament\Admin\Resources\ProductResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+
 class EditProduct extends EditRecord
 {
     protected static string $resource = ProductResource::class;
-    protected function getHeaderActions(): array { return [Actions\DeleteAction::make()]; }
+
+    protected function getHeaderActions(): array
+    {
+        return [Actions\DeleteAction::make()];
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['name'] = $this->record->getTranslations('name');
+        $data['description'] = $this->record->getTranslations('description');
+        $data['short_description'] = $this->record->getTranslations('short_description');
+
+        return $data;
+    }
 }

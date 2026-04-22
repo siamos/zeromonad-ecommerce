@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Manager\Widgets;
 
 use App\Models\Product;
@@ -9,7 +10,9 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class TopProductsWidget extends BaseWidget
 {
     protected static ?string $heading = 'Top Products (This Month)';
+
     protected static ?int $sort = 4;
+
     protected ?string $pollingInterval = '30s';
 
     public function table(Table $table): Table

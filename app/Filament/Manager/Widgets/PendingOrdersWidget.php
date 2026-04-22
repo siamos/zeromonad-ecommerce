@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Manager\Widgets;
 
 use App\Models\Order;
@@ -9,7 +10,9 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class PendingOrdersWidget extends BaseWidget
 {
     protected static ?string $heading = 'Pending Orders';
+
     protected static ?int $sort = 2;
+
     protected ?string $pollingInterval = '30s';
 
     public function table(Table $table): Table

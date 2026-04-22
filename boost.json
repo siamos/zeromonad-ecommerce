@@ -1,0 +1,27 @@
+{
+    "agents": [
+        "claude_code",
+        "codex",
+        "cursor",
+        "copilot"
+    ],
+    "guidelines": true,
+    "mcp": true,
+    "nightwatch_mcp": false,
+    "packages": [
+        "filament/filament",
+        "spatie/laravel-medialibrary",
+        "lorisleiva/laravel-actions"
+    ],
+    "sail": true,
+    "skills": [
+        "laravel-best-practices",
+        "scout-development",
+        "pest-testing",
+        "inertia-vue-development",
+        "tailwindcss-development",
+        "laravel-actions",
+        "medialibrary-development",
+        "laravel-specialist"
+    ]
+}

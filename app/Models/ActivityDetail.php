@@ -9,20 +9,23 @@ class ActivityDetail extends Model
 {
     protected $fillable = [
         'product_id',
+        'booking_type',
         'event_date',
         'location',
         'capacity',
         'duration_minutes',
         'booking_cutoff_hours',
+        'extra_attributes',
     ];
 
     protected function casts(): array
     {
         return [
-            'event_date'           => 'datetime',
-            'capacity'             => 'integer',
-            'duration_minutes'     => 'integer',
+            'event_date' => 'datetime',
+            'capacity' => 'integer',
+            'duration_minutes' => 'integer',
             'booking_cutoff_hours' => 'integer',
+            'extra_attributes' => 'array',
         ];
     }
 

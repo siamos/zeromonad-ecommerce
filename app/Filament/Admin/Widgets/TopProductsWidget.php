@@ -1,7 +1,8 @@
 <?php
+
 namespace App\Filament\Admin\Widgets;
 
-use App\Models\OrderItem;
+use App\Models\Product;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -9,14 +10,16 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class TopProductsWidget extends BaseWidget
 {
     protected static ?string $heading = 'Top Products (All Time)';
+
     protected static ?int $sort = 4;
+
     protected ?string $pollingInterval = '30s';
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                \App\Models\Product::withCount('orderItems')
+                Product::withCount('orderItems')
                     ->orderByDesc('order_items_count')
                     ->limit(5)
             )

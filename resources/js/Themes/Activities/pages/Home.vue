@@ -6,23 +6,21 @@
     <section class="relative bg-gradient-to-br from-emerald-700 to-teal-800 text-white py-28 overflow-hidden">
       <div class="absolute inset-0 opacity-10 bg-[url('/images/pattern.svg')]"></div>
       <div class="relative max-w-7xl mx-auto px-4 text-center">
-        <h1 class="text-5xl font-bold mb-6 leading-tight">
-          Unforgettable<br />Experiences Await
-        </h1>
+        <h1 class="text-5xl font-bold mb-6 leading-tight" v-html="t('home.hero_title').replace('\n', '<br />')"></h1>
         <p class="text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
-          Discover tours, classes, and adventures handpicked for those who seek more from life.
+          {{ t('home.hero_subtitle') }}
         </p>
         <Link :href="route('shop')"
           class="bg-white text-emerald-700 font-bold px-8 py-3 rounded-full hover:bg-emerald-50 transition-colors inline-block">
-          Browse Activities
+          {{ t('home.hero_cta') }}
         </Link>
       </div>
     </section>
 
-    <!-- Featured Activities -->
+    <!-- Featured Listings -->
     <section class="max-w-7xl mx-auto px-4 py-16">
-      <h2 class="text-3xl font-bold text-gray-900 mb-2">Upcoming Activities</h2>
-      <p class="text-gray-500 mb-8">Book your spot before it fills up.</p>
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">{{ t('home.featured_title') }}</h2>
+      <p class="text-gray-500 mb-8">{{ t('home.featured_subtitle') }}</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <ActivityCard
           v-for="activity in featuredActivities"
@@ -35,7 +33,7 @@
     <!-- Categories -->
     <section class="bg-white py-16">
       <div class="max-w-7xl mx-auto px-4">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">Browse by Type</h2>
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">{{ t('home.categories_title') }}</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Link
             v-for="category in categories"
@@ -44,7 +42,7 @@
             class="bg-emerald-50 rounded-xl p-6 text-center hover:bg-emerald-100 transition-all border border-transparent hover:border-emerald-200"
           >
             <div class="text-lg font-semibold text-gray-800">{{ category.name }}</div>
-            <div class="text-sm text-gray-500 mt-1">{{ category.products_count }} activities</div>
+            <div class="text-sm text-gray-500 mt-1">{{ category.products_count }} {{ t('home.listings_count') }}</div>
           </Link>
         </div>
       </div>
@@ -56,6 +54,9 @@
 import { Head, Link } from '@inertiajs/vue3'
 import Layout from '../Layout.vue'
 import ActivityCard from '../components/ActivityCard.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 defineProps({
   featuredActivities: Array,

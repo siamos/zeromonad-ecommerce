@@ -9,8 +9,8 @@
           </Link>
 
           <div class="hidden md:flex items-center gap-6">
-            <Link :href="route('shop')" class="text-gray-600 hover:text-emerald-600 transition-colors">Activities</Link>
-            <Link :href="route('blog.index')" class="text-gray-600 hover:text-emerald-600 transition-colors">Blog</Link>
+            <Link :href="route('shop')" class="text-gray-600 hover:text-emerald-600 transition-colors">{{ t('nav.browse') }}</Link>
+            <Link :href="route('blog.index')" class="text-gray-600 hover:text-emerald-600 transition-colors">{{ t('nav.blog') }}</Link>
           </div>
 
           <div class="flex items-center gap-4">
@@ -20,7 +20,7 @@
                 <input
                   v-model="searchQuery"
                   type="text"
-                  placeholder="Search activities…"
+                  :placeholder="t('nav.search_placeholder')"
                   class="w-48 pl-9 pr-3 py-1.5 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-300 bg-stone-50"
                 />
                 <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,17 +33,33 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
+              <span v-if="$page.props.cart_item_count > 0"
+                class="absolute -top-2 -right-2 bg-emerald-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {{ $page.props.cart_item_count > 99 ? '99+' : $page.props.cart_item_count }}
+              </span>
             </Link>
+
+            <!-- Locale switcher -->
+            <div class="flex items-center gap-1 text-xs cursor-pointer">
+              <button @click="setLocale('en')"
+                :class="$page.props.locale === 'en' ? 'font-bold text-emerald-700' : 'text-gray-400 hover:text-gray-600'"
+                class="px-1 py-0.5 rounded cursor-pointer">EN</button>
+              <span class="text-gray-300">|</span>
+              <button @click="setLocale('el')"
+                :class="$page.props.locale === 'el' ? 'font-bold text-emerald-700' : 'text-gray-400 hover:text-gray-600'"
+                class="px-1 py-0.5 rounded cursor-pointer">ΕΛ</button>
+            </div>
+
             <template v-if="$page.props.auth.user">
               <Link :href="route('account.index')" class="text-gray-600 hover:text-emerald-600 text-sm">
                 {{ $page.props.auth.user.name }}
               </Link>
             </template>
             <template v-else>
-              <Link :href="route('login')" class="text-gray-600 hover:text-emerald-600 text-sm">Login</Link>
+              <Link :href="route('login')" class="text-gray-600 hover:text-emerald-600 text-sm">{{ t('nav.login') }}</Link>
               <Link :href="route('register')"
                 class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 transition-colors">
-                Sign Up
+                {{ t('nav.sign_up') }}
               </Link>
             </template>
           </div>
@@ -69,21 +85,29 @@
 
     <footer class="bg-white border-t border-stone-200 mt-16">
       <div class="max-w-7xl mx-auto px-4 py-8 text-center text-sm text-gray-500">
-        © {{ new Date().getFullYear() }} {{ $page.props.site_name }}. Adventure awaits.
+        © {{ new Date().getFullYear() }} {{ $page.props.site_name }}. {{ t('nav.footer_activities') }}
       </div>
     </footer>
   </div>
+  <CartSuccessModal />
 </template>
 
 <script setup>
 import { Link, router } from '@inertiajs/vue3'
 import { ref } from 'vue'
+import { useI18n } from '@/composables/useI18n'
+import CartSuccessModal from '@/components/CartSuccessModal.vue'
 
+const { t } = useI18n()
 const route = window.route
 const searchQuery = ref('')
 
 function search() {
   if (!searchQuery.value.trim()) return
   router.get(route('shop'), { search: searchQuery.value.trim() }, { preserveState: false })
+}
+
+function setLocale(locale) {
+  router.post(route('locale.set'), { locale }, { preserveState: false })
 }
 </script>

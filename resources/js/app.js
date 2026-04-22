@@ -14,25 +14,24 @@ createInertiaApp({
     resolve: (name) => {
         const pages = import.meta.glob('./Themes/**/*.vue')
 
-        return (initialPage) => {
-            const theme = initialPage?.props?.current_theme ?? 'Products'
-            const themePath    = `./Themes/${theme}/pages/${name}.vue`
-            const fallbackPath = `./Themes/Products/pages/${name}.vue`
+        const pageData = JSON.parse(document.querySelector('[data-page]')?.dataset?.page ?? '{}')
+        const theme = pageData?.props?.current_theme ?? 'Products'
 
-            if (pages[themePath]) {
-                return pages[themePath]()
-            }
+        const themePath    = `./Themes/${theme}/pages/${name}.vue`
+        const fallbackPath = `./Themes/Products/pages/${name}.vue`
 
-            if (pages[fallbackPath]) {
-                return pages[fallbackPath]()
-            }
-
-            // Last resort: try without theme nesting (for shared pages like Auth)
-            return resolvePageComponent(
-                `./Themes/Products/pages/${name}.vue`,
-                import.meta.glob('./Themes/Products/pages/**/*.vue')
-            )
+        if (pages[themePath]) {
+            return pages[themePath]()
         }
+
+        if (pages[fallbackPath]) {
+            return pages[fallbackPath]()
+        }
+
+        return resolvePageComponent(
+            `./Themes/Products/pages/${name}.vue`,
+            import.meta.glob('./Themes/Products/pages/**/*.vue')
+        )
     },
 
     setup({ el, App, props, plugin }) {

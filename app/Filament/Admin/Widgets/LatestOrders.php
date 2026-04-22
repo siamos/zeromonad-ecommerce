@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Admin\Widgets;
 
 use App\Models\Order;
@@ -9,7 +10,9 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class LatestOrders extends BaseWidget
 {
     protected static ?string $heading = 'Latest Orders';
+
     protected static ?int $sort = 7;
+
     protected ?string $pollingInterval = '30s';
 
     public function table(Table $table): Table

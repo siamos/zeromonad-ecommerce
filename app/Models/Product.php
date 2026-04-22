@@ -13,10 +13,15 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Spatie\Tags\HasTags;
+use Spatie\Translatable\HasTranslations;
 
 class Product extends Model implements HasMedia
 {
-    use HasSlug, HasTags, InteractsWithMedia, SoftDeletes;
+    use HasSlug, HasTags, HasTranslations, InteractsWithMedia, SoftDeletes;
+
+    public array $translatable = ['name', 'description', 'short_description'];
+
+    protected $appends = ['image_url', 'in_stock'];
 
     protected $fillable = [
         'category_id',
@@ -35,17 +40,17 @@ class Product extends Model implements HasMedia
     protected function casts(): array
     {
         return [
-            'price'         => 'decimal:2',
+            'price' => 'decimal:2',
             'compare_price' => 'decimal:2',
-            'stock'         => 'integer',
-            'featured'      => 'boolean',
+            'stock' => 'integer',
+            'featured' => 'boolean',
         ];
     }
 
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
-            ->generateSlugsFrom('name')
+            ->generateSlugsFrom(fn ($model) => $model->getTranslation('name', 'en'))
             ->saveSlugsTo('slug');
     }
 
@@ -57,7 +62,7 @@ class Product extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('product-images')
-            ->useFallbackUrl('/images/product-placeholder.png');
+            ->useFallbackUrl('/images/product-placeholder.svg');
     }
 
     public function registerMediaConversions(?Media $media = null): void
@@ -90,6 +95,28 @@ class Product extends Model implements HasMedia
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function toArray(): array
+    {
+        $array = parent::toArray();
+        $locale = app()->getLocale();
+
+        foreach ($this->translatable as $key) {
+            $array[$key] = $this->getTranslation($key, $locale, useFallbackLocale: true);
+        }
+
+        return $array;
+    }
+
+    public function getImageUrlAttribute(): string
+    {
+        return $this->getFirstMediaUrl('product-images') ?: '/images/product-placeholder.svg';
+    }
+
+    public function getInStockAttribute(): bool
+    {
+        return $this->stock > 0;
     }
 
     public function isPublished(): bool

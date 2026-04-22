@@ -1,19 +1,19 @@
 <?php
 
-use App\Actions\Reviews\SubmitReview;
 use App\Actions\Cart\AddToCart;
+use App\Actions\Cart\RemoveFromCart;
 use App\Actions\Cart\UpdateCartItem;
 use App\Actions\Coupons\ApplyCoupon;
-use App\Actions\Cart\RemoveFromCart;
 use App\Actions\Orders\CreateOrder;
 use App\Actions\Payments\VerifyPayment;
+use App\Actions\Reviews\SubmitReview;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 // Public routes
 Route::get('/', [ProductController::class, 'home'])->name('home');
@@ -50,5 +50,17 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
 // Reviews (requires auth)
 Route::middleware('auth')->post('/reviews', SubmitReview::class)->name('reviews.store');
 
+// Locale switcher
+Route::post('/locale', function (Request $request) {
+    if (in_array($request->locale, ['en', 'el'])) {
+        session(['locale' => $request->locale]);
+    }
+
+    return back();
+})->name('locale.set');
+
+// Impersonation routes
+Route::impersonate();
+
 // Auth routes
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

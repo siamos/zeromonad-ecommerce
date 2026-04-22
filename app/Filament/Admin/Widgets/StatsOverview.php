@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Admin\Widgets;
 
 use App\Models\Order;
@@ -10,12 +11,13 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 class StatsOverview extends BaseWidget
 {
     protected static ?int $sort = 1;
+
     protected ?string $pollingInterval = '30s';
 
     protected function getStats(): array
     {
         return [
-            Stat::make('Total Revenue', '€' . number_format(Order::where('payment_status', 'paid')->sum('total'), 2))
+            Stat::make('Total Revenue', '€'.number_format(Order::where('payment_status', 'paid')->sum('total'), 2))
                 ->description('Paid orders')
                 ->color('success'),
             Stat::make('Total Orders', Order::count())

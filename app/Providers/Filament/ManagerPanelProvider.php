@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Manager\Pages\Dashboard;
+use App\Http\Middleware\RequireRole;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -27,7 +28,7 @@ class ManagerPanelProvider extends PanelProvider
             ->login()
             ->colors([
                 'primary' => Color::Teal,
-                'danger'  => Color::Rose,
+                'danger' => Color::Rose,
                 'success' => Color::Emerald,
                 'warning' => Color::Amber,
             ])
@@ -60,6 +61,7 @@ class ManagerPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                RequireRole::class.':manager',
             ])
             ->viteTheme('resources/css/filament/manager/theme.css');
     }

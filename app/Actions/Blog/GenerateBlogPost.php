@@ -17,8 +17,8 @@ class GenerateBlogPost
 
     public function handle(?string $topic = null): BlogPost
     {
-        $settings  = app(GeneralSettings::class);
-        $siteName  = $settings->site_name;
+        $settings = app(GeneralSettings::class);
+        $siteName = $settings->site_name;
         $themeName = $settings->active_theme;
 
         $topic ??= $this->generateTopic($themeName);
@@ -26,14 +26,14 @@ class GenerateBlogPost
         $client = OpenAI::client(config('services.openai.key', env('OPENAI_API_KEY')));
 
         $response = $client->chat()->create([
-            'model'    => 'gpt-4o',
+            'model' => 'gpt-4o',
             'messages' => [
                 [
-                    'role'    => 'system',
+                    'role' => 'system',
                     'content' => "You are a content writer for {$siteName}, an ecommerce store. Write engaging, SEO-friendly blog posts. Always respond with valid JSON containing: title, excerpt (2-3 sentences), content (HTML with h2/h3/p tags, 600-900 words). The store theme is: {$themeName}.",
                 ],
                 [
-                    'role'    => 'user',
+                    'role' => 'user',
                     'content' => "Write a blog post about: {$topic}",
                 ],
             ],
@@ -43,11 +43,11 @@ class GenerateBlogPost
         $data = json_decode($response->choices[0]->message->content, true);
 
         return BlogPost::create([
-            'title'        => $data['title'],
-            'slug'         => Str::slug($data['title']),
-            'excerpt'      => $data['excerpt'],
-            'content'      => $data['content'],
-            'status'       => 'published',
+            'title' => ['en' => $data['title']],
+            'slug' => Str::slug($data['title']),
+            'excerpt' => ['en' => $data['excerpt']],
+            'content' => ['en' => $data['content']],
+            'status' => 'published',
             'ai_generated' => true,
             'published_at' => now(),
         ]);
@@ -56,7 +56,7 @@ class GenerateBlogPost
     public function asCommand(Command $command): void
     {
         $post = $this->handle($command->option('topic'));
-        $command->info("Blog post created: {$post->title}");
+        $command->info("Blog post created: {$post->getTranslation('title', 'en')}");
         $command->line("URL: /blog/{$post->slug}");
     }
 

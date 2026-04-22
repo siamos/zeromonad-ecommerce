@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Manager\Widgets;
 
 use App\Models\Product;
@@ -10,7 +11,9 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class LowStockWidget extends BaseWidget
 {
     protected static ?string $heading = 'Low Stock';
+
     protected static ?int $sort = 3;
+
     protected ?string $pollingInterval = '60s';
 
     public function table(Table $table): Table

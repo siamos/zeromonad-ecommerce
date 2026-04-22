@@ -1,6 +1,6 @@
 <template>
   <Layout>
-    <Head title="Activities" />
+    <Head title="Shop" />
 
     <div class="max-w-7xl mx-auto px-4 py-10">
       <div class="flex flex-col md:flex-row gap-8">
@@ -8,14 +8,14 @@
         <!-- Filters -->
         <aside class="w-full md:w-64 shrink-0">
           <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 space-y-6">
-            <h2 class="font-bold text-gray-900">Filter Activities</h2>
+            <h2 class="font-bold text-gray-900">{{ t('shop.filter_listings') }}</h2>
 
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">{{ t('shop.category') }}</label>
               <div class="space-y-1">
                 <label class="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="radio" v-model="filters.category" value="" class="text-emerald-600" />
-                  <span class="text-gray-600">All Categories</span>
+                  <span class="text-gray-600">{{ t('shop.all_categories') }}</span>
                 </label>
                 <label v-for="cat in categories" :key="cat.id" class="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="radio" v-model="filters.category" :value="cat.slug" class="text-emerald-600" />
@@ -25,7 +25,7 @@
             </div>
 
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">{{ t('shop.date') }}</label>
               <input
                 type="date"
                 v-model="filters.date"
@@ -34,7 +34,7 @@
             </div>
 
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Max Price</label>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">{{ t('shop.max_price') }}</label>
               <input
                 type="range"
                 v-model="filters.max_price"
@@ -51,17 +51,17 @@
 
             <button
               @click="applyFilters"
-              class="w-full bg-emerald-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors"
+              class="w-full bg-emerald-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors cursor-pointer"
             >
-              Apply Filters
+              {{ t('shop.apply_filters') }}
             </button>
 
             <button
               v-if="hasActiveFilters"
               @click="clearFilters"
-              class="w-full text-sm text-gray-500 hover:text-gray-700 underline"
+              class="w-full text-sm text-gray-500 hover:text-gray-700 underline cursor-pointer"
             >
-              Clear all filters
+              {{ t('shop.clear_filters') }}
             </button>
           </div>
         </aside>
@@ -70,19 +70,19 @@
         <div class="flex-1">
           <div class="flex items-center justify-between mb-6">
             <div>
-              <h1 class="text-2xl font-bold text-gray-900">All Activities</h1>
-              <p class="text-sm text-gray-500 mt-1">{{ activities.total }} activities found</p>
+              <h1 class="text-2xl font-bold text-gray-900">{{ t('shop.all_listings') }}</h1>
+              <p class="text-sm text-gray-500 mt-1">{{ activities.total }} {{ t('shop.listings_found') }}</p>
             </div>
             <select
               v-model="filters.sort"
               @change="applyFilters"
               class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="">Sort: Featured</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
-              <option value="date_asc">Date: Soonest</option>
-              <option value="name_asc">Name: A–Z</option>
+              <option value="">{{ t('shop.sort_featured') }}</option>
+              <option value="price_asc">{{ t('shop.sort_price_asc') }}</option>
+              <option value="price_desc">{{ t('shop.sort_price_desc') }}</option>
+              <option value="date_asc">{{ t('shop.sort_date_asc') }}</option>
+              <option value="name_asc">{{ t('shop.sort_name_asc') }}</option>
             </select>
           </div>
 
@@ -99,13 +99,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <p class="font-medium">No activities found</p>
-            <p class="text-sm mt-1">Try adjusting your filters</p>
+            <p class="font-medium">{{ t('shop.no_listings') }}</p>
+            <p class="text-sm mt-1">{{ t('shop.try_filters') }}</p>
           </div>
 
           <!-- Pagination -->
           <div v-if="activities.last_page > 1" class="mt-10 flex justify-center gap-2">
-            <Link
+            <a
               v-for="link in activities.links"
               :key="link.label"
               :href="link.url ?? '#'"
@@ -126,6 +126,10 @@ import { Head, Link, router } from '@inertiajs/vue3'
 import { reactive, computed } from 'vue'
 import Layout from '../Layout.vue'
 import ActivityCard from '../components/ActivityCard.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
+const route = window.route
 
 const props = defineProps({
   activities: Object,

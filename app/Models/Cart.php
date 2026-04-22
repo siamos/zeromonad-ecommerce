@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,6 +14,8 @@ class Cart extends Model
         'coupon_id',
         'session_id',
     ];
+
+    protected $appends = ['subtotal', 'discount_amount', 'discount', 'total', 'item_count'];
 
     public function user(): BelongsTo
     {
@@ -29,21 +32,36 @@ class Cart extends Model
         return $this->hasMany(CartItem::class);
     }
 
-    public function subtotal(): float
+    protected function subtotal(): Attribute
     {
-        return (float) $this->items->sum(fn ($item) => $item->unit_price * $item->quantity);
+        return Attribute::get(
+            fn () => (float) $this->items->sum(fn ($item) => $item->unit_price * $item->quantity)
+        );
     }
 
-    public function total(): float
+    protected function discount(): Attribute
     {
-        $subtotal = $this->subtotal();
-        $discount = $this->coupon?->calculateDiscount($subtotal) ?? 0;
-
-        return max(0, $subtotal - $discount);
+        return Attribute::get(
+            fn () => (float) ($this->coupon?->calculateDiscount($this->subtotal) ?? 0)
+        );
     }
 
-    public function itemCount(): int
+    protected function discountAmount(): Attribute
     {
-        return (int) $this->items->sum('quantity');
+        return Attribute::get(fn () => $this->discount);
+    }
+
+    protected function total(): Attribute
+    {
+        return Attribute::get(
+            fn () => (float) max(0, $this->subtotal - $this->discount_amount)
+        );
+    }
+
+    protected function itemCount(): Attribute
+    {
+        return Attribute::get(
+            fn () => (int) $this->items->sum('quantity')
+        );
     }
 }

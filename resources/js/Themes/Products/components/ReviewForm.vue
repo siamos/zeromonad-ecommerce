@@ -1,13 +1,13 @@
 <template>
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <h3 class="font-semibold text-gray-900 mb-4">Write a Review</h3>
+    <h3 class="font-semibold text-gray-900 mb-4">{{ t('review.write') }}</h3>
 
     <div v-if="$page.props.flash?.success" class="mb-4 p-3 bg-green-50 text-green-700 rounded-lg text-sm">
       {{ $page.props.flash.success }}
     </div>
 
     <div v-if="!$page.props.auth.user" class="text-sm text-gray-500">
-      <Link :href="route('login')" class="text-indigo-600 hover:underline">Sign in</Link> to leave a review.
+      <Link :href="route('login')" class="text-indigo-600 hover:underline">{{ t('review.sign_in') }}</Link> {{ t('review.sign_in_to_leave') }}
     </div>
 
     <form v-else @submit.prevent="submit" class="space-y-4">
@@ -15,34 +15,34 @@
 
       <!-- Star rating -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+        <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('review.rating') }}</label>
         <div class="flex gap-1">
           <button
             v-for="n in 5"
             :key="n"
             type="button"
             @click="form.rating = n"
-            class="text-2xl leading-none transition-colors"
+            class="text-2xl leading-none transition-colors cursor-pointer"
             :class="n <= form.rating ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'"
           >★</button>
         </div>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-gray-400 font-normal">(optional)</span></label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('review.title') }} <span class="text-gray-400 font-normal">{{ t('review.optional') }}</span></label>
         <input v-model="form.title" type="text" maxlength="150"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none" />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Review</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('review.body') }}</label>
         <textarea v-model="form.body" rows="4" required maxlength="2000"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none" />
       </div>
 
       <button type="submit" :disabled="!form.rating || submitting"
-        class="px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-        {{ submitting ? 'Submitting…' : 'Submit Review' }}
+        class="px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer">
+        {{ submitting ? t('review.submitting') : t('review.submit') }}
       </button>
     </form>
   </div>
@@ -51,6 +51,10 @@
 <script setup>
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { reactive, ref } from 'vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
+const route = window.route
 
 const props = defineProps({ productId: Number })
 

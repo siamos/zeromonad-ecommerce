@@ -7,13 +7,13 @@
         <!-- Sidebar Filters -->
         <aside class="w-full md:w-64 shrink-0">
           <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-            <h3 class="font-semibold text-gray-900 mb-4">Categories</h3>
+            <h3 class="font-semibold text-gray-900 mb-4">{{ t('shop.categories') }}</h3>
             <ul class="space-y-2">
               <li>
                 <Link :href="route('shop')"
                   class="text-sm hover:text-indigo-600 transition-colors"
                   :class="!activeCategory ? 'text-indigo-600 font-medium' : 'text-gray-600'">
-                  All Products
+                  {{ t('shop.all_products') }}
                 </Link>
               </li>
               <li v-for="cat in categories" :key="cat.id">
@@ -26,7 +26,7 @@
             </ul>
 
             <div class="mt-6 pt-6 border-t border-gray-100">
-              <h3 class="font-semibold text-gray-900 mb-4">Price Range</h3>
+              <h3 class="font-semibold text-gray-900 mb-4">{{ t('shop.price_range') }}</h3>
               <div class="flex gap-2">
                 <input type="number" placeholder="Min" v-model="filters.min_price"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
@@ -34,8 +34,8 @@
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
               </div>
               <button @click="applyFilters"
-                class="mt-3 w-full bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700 transition-colors">
-                Apply
+                class="mt-3 w-full bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700 transition-colors cursor-pointer">
+                {{ t('shop.apply') }}
               </button>
             </div>
           </div>
@@ -45,9 +45,9 @@
         <div class="flex-1">
           <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold text-gray-900">
-              {{ activeCategory ? currentCategoryName : 'All Products' }}
+              {{ activeCategory ? currentCategoryName : t('shop.all_products') }}
             </h1>
-            <span class="text-sm text-gray-500">{{ products.total }} products</span>
+            <span class="text-sm text-gray-500">{{ products.total }} {{ t('shop.products_total') }}</span>
           </div>
 
           <div v-if="products.data.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -55,18 +55,16 @@
           </div>
 
           <div v-else class="text-center py-16 text-gray-500">
-            <p class="text-lg">No products found.</p>
+            <p class="text-lg">{{ t('shop.no_products') }}</p>
           </div>
 
           <!-- Pagination -->
           <div v-if="products.last_page > 1" class="mt-10 flex justify-center gap-2">
-            <Link
-              v-for="link in products.links"
-              :key="link.label"
-              :href="link.url ?? '#'"
-              :class="['px-3 py-2 rounded-lg text-sm border', link.active ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300']"
-              v-html="link.label"
-            />
+            <a v-for="link in products.links" :key="link.label" :href="link.url ?? '#'"
+              :class="['px-3 py-2 rounded-lg text-sm border', link.active
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300']"
+              v-html="link.label" />
           </div>
         </div>
       </div>
@@ -79,6 +77,10 @@ import { Head, Link, router } from '@inertiajs/vue3'
 import { ref, computed } from 'vue'
 import Layout from '../Layout.vue'
 import ProductCard from '../components/ProductCard.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
+const route = window.route
 
 const props = defineProps({
   products: Object,

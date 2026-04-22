@@ -5,7 +5,6 @@ namespace App\Filament\Manager\Pages;
 use App\Settings\PaymentSettings as PaymentSettingsModel;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -13,17 +12,35 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class PaymentSettings extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    public static function getNavigationIcon(): string|\BackedEnum|null { return 'heroicon-o-credit-card'; }
-    public static function getNavigationLabel(): string { return 'Payment Settings'; }
-    public static function getNavigationGroup(): ?string { return 'Settings'; }
+    public static function getNavigationIcon(): string|\BackedEnum|null
+    {
+        return 'heroicon-o-credit-card';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Payment Settings';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Settings';
+    }
+
     protected static ?int $navigationSort = 80;
-    public function getView(): string { return 'filament.manager.pages.payment-settings'; }
+
+    public function getView(): string
+    {
+        return 'filament.manager.pages.payment-settings';
+    }
 
     public ?array $data = [];
 
@@ -32,25 +49,21 @@ class PaymentSettings extends Page implements HasForms
         $s = app(PaymentSettingsModel::class);
 
         $this->form->fill([
-            'cash_enabled'          => $s->cash_enabled,
+            'cash_enabled' => $s->cash_enabled,
             'bank_transfer_enabled' => $s->bank_transfer_enabled,
-            'viva_wallet_enabled'   => $s->viva_wallet_enabled,
-            'cardlink_enabled'      => $s->cardlink_enabled,
-            'stripe_enabled'        => $s->stripe_enabled,
-
-            'viva_merchant_id'    => $s->viva_merchant_id,
-            'viva_api_key'        => $s->viva_api_key,
-            'viva_client_id'      => $s->viva_client_id,
-            'viva_client_secret'  => $s->viva_client_secret,
-            'viva_use_sandbox'    => $s->viva_use_sandbox,
-
-            'cardlink_merchant_id'   => $s->cardlink_merchant_id,
+            'viva_wallet_enabled' => $s->viva_wallet_enabled,
+            'cardlink_enabled' => $s->cardlink_enabled,
+            'stripe_enabled' => $s->stripe_enabled,
+            'viva_merchant_id' => $s->viva_merchant_id,
+            'viva_api_key' => $s->viva_api_key,
+            'viva_client_id' => $s->viva_client_id,
+            'viva_client_secret' => $s->viva_client_secret,
+            'viva_use_sandbox' => $s->viva_use_sandbox,
+            'cardlink_merchant_id' => $s->cardlink_merchant_id,
             'cardlink_shared_secret' => $s->cardlink_shared_secret,
-            'cardlink_use_sandbox'   => $s->cardlink_use_sandbox,
-
-            'stripe_key'    => $s->stripe_key,
+            'cardlink_use_sandbox' => $s->cardlink_use_sandbox,
+            'stripe_key' => $s->stripe_key,
             'stripe_secret' => $s->stripe_secret,
-
             'bank_accounts' => $s->bank_accounts,
         ]);
     }
@@ -111,6 +124,8 @@ class PaymentSettings extends Page implements HasForms
                         TextInput::make('stripe_key')->label('Publishable Key'),
                         TextInput::make('stripe_secret')->label('Secret Key')->password()->revealable(),
                     ])->columns(2),
+
+                Actions::make($this->getFormActions()),
             ])
             ->statePath('data');
     }
@@ -118,7 +133,7 @@ class PaymentSettings extends Page implements HasForms
     public function save(): void
     {
         $data = $this->form->getState();
-        $s    = app(PaymentSettingsModel::class);
+        $s = app(PaymentSettingsModel::class);
 
         foreach ($data as $key => $value) {
             $s->{$key} = $value;
