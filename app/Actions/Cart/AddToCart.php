@@ -28,9 +28,9 @@ class AddToCart
         } else {
             $item = $cart->items()->create([
                 'product_id' => $product->id,
-                'quantity'   => $quantity,
+                'quantity' => $quantity,
                 'unit_price' => $product->price,
-                'options'    => $options,
+                'options' => $options,
             ]);
         }
 
@@ -41,15 +41,36 @@ class AddToCart
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity'   => 'integer|min:1|max:99',
+            'quantity' => 'integer|min:1|max:99',
+            'booking_date' => 'nullable|date',
+            'check_in' => 'nullable|date',
+            'check_out' => 'nullable|date|after:check_in',
+            'pickup_date' => 'nullable|date',
+            'return_date' => 'nullable|date|after:pickup_date',
+            'guests' => 'nullable|integer|min:1',
+            'slot_id' => 'nullable|exists:activity_slots,id',
+            'extras' => 'nullable|array',
+            'extras.*' => 'string',
         ]);
 
-        $product  = Product::findOrFail($request->product_id);
+        $product = Product::findOrFail($request->product_id);
         $quantity = $request->integer('quantity', 1);
+
+        $options = array_filter([
+            'booking_date' => $request->booking_date,
+            'check_in' => $request->check_in,
+            'check_out' => $request->check_out,
+            'pickup_date' => $request->pickup_date,
+            'return_date' => $request->return_date,
+            'guests' => $request->guests,
+            'slot_id' => $request->slot_id,
+            'extras' => $request->extras ?: null,
+        ]);
 
         $this->handle(
             product: $product,
             quantity: $quantity,
+            options: $options,
             userId: $request->user()?->id,
             sessionId: $request->session()->getId(),
         );

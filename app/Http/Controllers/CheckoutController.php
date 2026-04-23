@@ -6,37 +6,44 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\PaymentGateways\PaymentGatewayManager;
 use App\Settings\PaymentSettings;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CheckoutController extends Controller
 {
-    public function index(PaymentGatewayManager $gateways, PaymentSettings $paymentSettings): Response
+    public function index(Request $request, PaymentGatewayManager $gateways, PaymentSettings $paymentSettings): Response
     {
-        $cart = Cart::with(['items.product.activityDetail', 'coupon'])
-            ->where('user_id', auth()->id())
-            ->first();
+        $cart = auth()->check()
+            ? Cart::with(['items.product.activityDetail', 'coupon'])->where('user_id', auth()->id())->first()
+            : Cart::with(['items.product.activityDetail', 'coupon'])->where('session_id', $request->session()->getId())->first();
 
-        if (!$cart || $cart->items->isEmpty()) {
+        if (! $cart || $cart->items->isEmpty()) {
             return redirect()->route('cart.index');
         }
 
         return Inertia::render('Checkout', [
-            'cart'           => $cart,
+            'cart' => $cart,
             'paymentMethods' => $gateways->available(),
-            'bankAccounts'   => collect($paymentSettings->bank_accounts)
-                ->filter(fn ($b) => !empty($b['iban']))
+            'bankAccounts' => collect($paymentSettings->bank_accounts)
+                ->filter(fn ($b) => ! empty($b['iban']))
                 ->values(),
-            'user'           => auth()->user()?->only('name', 'email'),
+            'user' => auth()->user()?->only('name', 'email'),
+            'pointsBalance' => auth()->user()?->points_balance ?? 0,
         ]);
     }
 
-    public function success(Order $order): Response
+    public function success(Request $request, Order $order): Response
     {
-        abort_unless($order->user_id === auth()->id(), 403);
+        if ($order->user_id) {
+            abort_unless($order->user_id === auth()->id(), 403);
+        } else {
+            abort_unless($request->session()->get('guest_order_token') === $order->guest_token, 403);
+        }
 
         return Inertia::render('OrderSuccess', [
             'order' => $order->load('items'),
+            'isGuest' => is_null($order->user_id),
         ]);
     }
 }

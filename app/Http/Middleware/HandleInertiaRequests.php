@@ -3,8 +3,10 @@
 namespace App\Http\Middleware;
 
 use App\Models\Cart;
+use App\Models\Wishlist;
 use App\Settings\GeneralSettings;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
 
@@ -28,6 +30,16 @@ class HandleInertiaRequests extends Middleware
             'current_theme' => $settings->active_theme,
             'site_name' => $settings->site_name,
             'currency' => $settings->currency,
+            'site_description' => $settings->site_description,
+            'site_logo_url' => $settings->site_logo
+                ? Storage::disk('public')->url($settings->site_logo)
+                : null,
+            'hero_title' => $settings->hero_title,
+            'hero_subtitle' => $settings->hero_subtitle,
+            'hero_image_url' => $settings->hero_image
+                ? Storage::disk('public')->url($settings->hero_image)
+                : null,
+            'low_stock_threshold' => $settings->low_stock_threshold,
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
@@ -42,6 +54,9 @@ class HandleInertiaRequests extends Middleware
                 ->withSum('items', 'quantity')
                 ->first()
                 ?->items_sum_quantity ?? 0,
+            'wishlist_ids' => fn () => auth()->check()
+                ? Wishlist::where('user_id', auth()->id())->pluck('product_id')->all()
+                : [],
             'locale' => app()->getLocale(),
             'translations' => fn () => json_decode(
                 file_get_contents(

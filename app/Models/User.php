@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Lab404\Impersonate\Models\Impersonate;
@@ -15,12 +16,13 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles, Billable, Impersonate;
+    use Billable, HasFactory, HasRoles, Impersonate, Notifiable;
 
     protected $fillable = [
         'name',
         'email',
         'password',
+        'points_balance',
     ];
 
     protected $hidden = [
@@ -32,7 +34,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'password' => 'hashed',
         ];
     }
 
@@ -41,7 +43,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Order::class);
     }
 
-    public function cart(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function cart(): HasOne
     {
         return $this->hasOne(Cart::class);
     }
@@ -49,6 +51,33 @@ class User extends Authenticatable implements MustVerifyEmail
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function pointsTransactions(): HasMany
+    {
+        return $this->hasMany(PointsTransaction::class);
+    }
+
+    public function awardPoints(int $points, string $description, ?Order $order = null): void
+    {
+        $this->increment('points_balance', $points);
+        $this->pointsTransactions()->create([
+            'order_id' => $order?->id,
+            'points' => $points,
+            'type' => 'earned',
+            'description' => $description,
+        ]);
+    }
+
+    public function redeemPoints(int $points, string $description, ?Order $order = null): void
+    {
+        $this->decrement('points_balance', $points);
+        $this->pointsTransactions()->create([
+            'order_id' => $order?->id,
+            'points' => -$points,
+            'type' => 'redeemed',
+            'description' => $description,
+        ]);
     }
 
     public function canImpersonate(): bool

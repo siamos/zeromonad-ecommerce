@@ -3,11 +3,16 @@
     <Head title="Home" />
 
     <!-- Hero -->
-    <section class="bg-gradient-to-br from-indigo-600 to-purple-700 text-white py-24">
-      <div class="max-w-7xl mx-auto px-4 text-center">
-        <h1 class="text-5xl font-bold mb-6">{{ t('home.hero_title_products') }}</h1>
+    <section class="relative bg-gradient-to-br from-indigo-600 to-purple-700 text-white py-24 overflow-hidden">
+      <div v-if="$page.props.hero_image_url" class="absolute inset-0 bg-cover bg-center"
+        :style="{ backgroundImage: `url(${$page.props.hero_image_url})` }">
+        <div class="absolute inset-0 bg-indigo-900/60"></div>
+      </div>
+      <div class="relative max-w-7xl mx-auto px-4 text-center">
+        <h1 class="text-5xl font-bold mb-6"
+          v-html="($page.props.hero_title || t('home.hero_title_products')).replace('\n', '<br />')"></h1>
         <p class="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto">
-          {{ t('home.hero_subtitle_products') }}
+          {{ $page.props.hero_subtitle || t('home.hero_subtitle_products') }}
         </p>
         <Link :href="route('shop')"
           class="bg-white text-indigo-600 font-semibold px-8 py-3 rounded-full hover:bg-indigo-50 transition-colors inline-block">

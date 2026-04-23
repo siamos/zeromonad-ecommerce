@@ -3,9 +3,11 @@
 namespace App\Filament\Admin\Pages;
 
 use App\Actions\Settings\SwitchTheme;
+use App\Enums\Theme;
 use App\Settings\GeneralSettings;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -48,6 +50,7 @@ class SiteSettings extends Page implements HasForms
 
         $this->form->fill([
             'site_name' => $settings->site_name,
+            'site_description' => $settings->site_description,
             'active_theme' => $settings->active_theme,
             'currency' => $settings->currency,
             'tax_rate' => $settings->tax_rate,
@@ -57,15 +60,17 @@ class SiteSettings extends Page implements HasForms
 
     public function form(Schema $schema): Schema
     {
-        $themes = collect(config('themes.available'))
-            ->mapWithKeys(fn ($value, $key) => [$key => $value['label']])
-            ->toArray();
-
         return $schema
             ->schema([
                 TextInput::make('site_name')->required()->label('Site Name'),
+                Textarea::make('site_description')
+                    ->label('Site Description')
+                    ->helperText('Default meta description used for SEO across all pages.')
+                    ->rows(3)
+                    ->maxLength(300)
+                    ->columnSpanFull(),
                 Select::make('active_theme')
-                    ->options($themes)
+                    ->options(Theme::class)
                     ->required()
                     ->label('Active Theme')
                     ->helperText('Changes take effect on the next page load — no rebuild required.'),
@@ -85,6 +90,7 @@ class SiteSettings extends Page implements HasForms
         $oldTheme = $settings->active_theme;
 
         $settings->site_name = $data['site_name'];
+        $settings->site_description = $data['site_description'] ?: null;
         $settings->currency = $data['currency'];
         $settings->tax_rate = (float) $data['tax_rate'];
         $settings->low_stock_threshold = (int) $data['low_stock_threshold'];

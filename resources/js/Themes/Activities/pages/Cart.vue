@@ -3,6 +3,7 @@
     <Head :title="t('cart.title')" />
 
     <div class="max-w-5xl mx-auto px-4 py-10">
+      <Breadcrumb :items="[{ label: t('nav.home'), href: route('home') }, { label: t('nav.browse'), href: route('shop') }, { label: t('cart.title') }]" />
       <h1 class="text-3xl font-bold text-gray-900 mb-8">{{ t('cart.title') }}</h1>
 
       <div v-if="cart && cart.items?.length" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -22,6 +23,9 @@
               <h3 class="font-semibold text-gray-900 truncate">{{ item.product.name }}</h3>
               <div v-if="item.product.activity_detail?.event_date" class="text-sm text-emerald-600 font-medium mt-0.5">
                 {{ formatDate(item.product.activity_detail.event_date) }}
+              </div>
+              <div v-else-if="item.options?.booking_date" class="text-sm text-emerald-600 font-medium mt-0.5">
+                {{ formatDate(item.options.booking_date) }}
               </div>
               <div v-if="item.product.activity_detail?.location" class="text-xs text-gray-500 mt-0.5">
                 {{ item.product.activity_detail.location }}
@@ -56,6 +60,15 @@
         <div class="lg:col-span-1">
           <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 sticky top-6 space-y-4">
             <h2 class="font-bold text-gray-900 text-lg">{{ t('cart.order_summary') }}</h2>
+
+            <!-- Free shipping bar -->
+            <div>
+              <div v-if="freeShippingRemaining <= 0" class="text-xs text-emerald-600 font-semibold mb-1">{{ t('cart.free_shipping_unlocked') }}</div>
+              <div v-else class="text-xs text-gray-500 mb-1">{{ t('cart.free_shipping_remaining').replace('{amount}', formatPrice(freeShippingRemaining)) }}</div>
+              <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-500 rounded-full transition-all duration-500" :style="{ width: freeShippingPercent + '%' }" />
+              </div>
+            </div>
 
             <!-- Coupon -->
             <form @submit.prevent="applyCoupon" class="flex gap-2">
@@ -123,15 +136,20 @@
 
 <script setup>
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import Layout from '../Layout.vue'
 import { useI18n } from '@/composables/useI18n'
+import Breadcrumb from '@/components/Breadcrumb.vue'
 
 const { t } = useI18n()
 const route = window.route
 const props = defineProps({ cart: Object })
 const page = usePage()
 const couponCode = ref('')
+
+const freeShippingThreshold = computed(() => page.props.free_shipping_threshold ?? 50)
+const freeShippingRemaining = computed(() => Math.max(0, freeShippingThreshold.value - (props.cart?.subtotal ?? 0)))
+const freeShippingPercent = computed(() => Math.min(100, ((props.cart?.subtotal ?? 0) / freeShippingThreshold.value) * 100))
 
 function formatPrice(price) {
   return new Intl.NumberFormat('el-GR', {

@@ -19,9 +19,10 @@ class GenerateBlogPost
     {
         $settings = app(GeneralSettings::class);
         $siteName = $settings->site_name;
-        $themeName = $settings->active_theme;
+        $theme = $settings->theme();
+        $themeName = $theme->getLabel();
 
-        $topic ??= $this->generateTopic($themeName);
+        $topic ??= $this->generateTopic($theme->value);
 
         $client = OpenAI::client(config('services.openai.key', env('OPENAI_API_KEY')));
 

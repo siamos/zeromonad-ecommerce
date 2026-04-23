@@ -1,20 +1,17 @@
 <template>
   <Layout>
-    <Head :title="activity.name" />
+    <Head :title="activity.name">
+      <meta name="description" :content="activity.short_description ?? activity.description" />
+      <meta property="og:type" content="website" />
+      <meta property="og:title" :content="activity.name" />
+      <meta property="og:description" :content="activity.short_description ?? activity.description" />
+      <meta v-if="activity.image_url" property="og:image" :content="activity.image_url" />
+      <script v-if="schema" type="application/ld+json" v-html="JSON.stringify(schema)" />
+      <script type="application/ld+json" v-html="JSON.stringify(breadcrumbSchema)" />
+    </Head>
 
     <div class="max-w-7xl mx-auto px-4 py-10">
-      <!-- Breadcrumb -->
-      <nav class="text-sm text-gray-500 mb-6 flex items-center gap-1">
-        <Link :href="route('shop')" class="hover:text-emerald-600">{{ t('activity.listings') }}</Link>
-        <span>/</span>
-        <span v-if="activity.category">
-          <Link :href="route('shop') + '?category=' + activity.category.slug" class="hover:text-emerald-600">
-            {{ activity.category.name }}
-          </Link>
-          <span class="mx-1">/</span>
-        </span>
-        <span class="text-gray-800 font-medium">{{ activity.name }}</span>
-      </nav>
+      <Breadcrumb :items="breadcrumbs" />
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <!-- Left: image + details -->
@@ -141,7 +138,24 @@
         <div class="lg:col-span-1">
           <div class="sticky top-6">
             <div class="mb-4 text-3xl font-bold text-gray-900">{{ formatPrice(activity.price) }}<span class="text-base font-normal text-gray-500"> {{ t('activity.per_person') }}</span></div>
-            <BookingForm :activity="activity" />
+
+            <!-- Spots remaining badge -->
+            <div v-if="spotsRemaining !== null && spotsRemaining !== undefined" class="mb-4">
+              <div v-if="spotsRemaining === 0" class="flex items-center gap-2 text-red-600">
+                <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+                <span class="text-sm font-semibold">{{ t('activity.sold_out') }}</span>
+              </div>
+              <div v-else-if="spotsRemaining <= 5" class="flex items-center gap-2 text-orange-600">
+                <span class="w-2 h-2 rounded-full bg-orange-500 inline-block animate-pulse"></span>
+                <span class="text-sm font-semibold">{{ t('activity.only_x_left', { count: spotsRemaining }) }}</span>
+              </div>
+              <div v-else class="flex items-center gap-2 text-emerald-600">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                <span class="text-sm">{{ spotsRemaining }} {{ t('activity.spots_available') }}</span>
+              </div>
+            </div>
+
+            <BookingForm :activity="activity" :spots-remaining="spotsRemaining" :available-slots="availableSlots" />
           </div>
         </div>
       </div>
@@ -168,6 +182,14 @@
 
         <ReviewForm :product-id="activity.id" />
       </div>
+
+      <!-- Recommendations -->
+      <div v-if="recommended?.length" class="mt-16">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">{{ t('activity.you_may_also_like') }}</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <ActivityCard v-for="item in recommended" :key="item.id" :activity="item" />
+        </div>
+      </div>
     </div>
   </Layout>
 </template>
@@ -178,12 +200,45 @@ import { computed } from 'vue'
 import Layout from '../Layout.vue'
 import BookingForm from '../components/BookingForm.vue'
 import ReviewForm from '../components/ReviewForm.vue'
+import ActivityCard from '../components/ActivityCard.vue'
 import { useI18n } from '@/composables/useI18n'
+import Breadcrumb from '@/components/Breadcrumb.vue'
 
 const { t } = useI18n()
 const route = window.route
-const props = defineProps({ activity: Object })
+const props = defineProps({
+  activity: Object,
+  recommended: Array,
+  spotsRemaining: { type: Number, default: null },
+  availableSlots: { type: Array, default: () => [] },
+  schema: { type: Object, default: null },
+})
 const approvedReviews = computed(() => props.activity.reviews?.filter(r => r.status === 'approved') ?? [])
+
+const breadcrumbs = computed(() => {
+  const items = [
+    { label: t('nav.home'), href: route('home') },
+    { label: t('nav.browse'), href: route('shop') },
+  ]
+  if (props.activity.category) {
+    items.push({ label: props.activity.category.name, href: route('shop') + '?category=' + props.activity.category.slug })
+  }
+  items.push({ label: props.activity.name })
+  return items
+})
+
+const breadcrumbSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: breadcrumbs.value
+    .filter(b => b.href)
+    .map((b, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: b.label,
+      item: b.href,
+    })),
+}))
 const page = usePage()
 
 function formatPrice(price) {

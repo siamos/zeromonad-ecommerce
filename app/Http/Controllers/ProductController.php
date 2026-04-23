@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Theme;
+use App\Models\ActivitySlot;
 use App\Models\Category;
+use App\Models\OrderItem;
 use App\Models\Product;
+use App\Settings\GeneralSettings;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,6 +17,8 @@ class ProductController extends Controller
     public function home(): Response
     {
         $featured = Product::with(['category', 'activityDetail'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->where('status', 'published')
             ->where('featured', true)
             ->latest()
@@ -31,6 +37,8 @@ class ProductController extends Controller
     public function index(Request $request): Response
     {
         $query = Product::with(['category', 'activityDetail'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->where('status', 'published');
 
         if ($request->category) {
@@ -72,19 +80,103 @@ class ProductController extends Controller
 
     public function show(Product $product): Response
     {
-        $product->load(['category', 'activityDetail', 'tags', 'reviews.user']);
+        $product->load(['category', 'activityDetail', 'tags', 'reviews.user', 'activitySlots']);
+        $product->loadAvg('reviews', 'rating');
+        $product->loadCount('reviews');
 
-        $related = Product::with(['category', 'activityDetail'])
-            ->where('status', 'published')
-            ->where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
-            ->take(4)
+        $recommended = Product::with(['category', 'activityDetail', 'media'])
+            ->recommended($product)
             ->get();
+
+        $spotsRemaining = $product->activityDetail?->capacity
+            ? $product->activityDetail->spotsRemaining()
+            : null;
+
+        $theme = app(GeneralSettings::class)->theme();
+
+        $availableSlots = [];
+        if ($theme === Theme::Activities) {
+            $availableSlots = ActivitySlot::where('product_id', $product->id)
+                ->where('date', '>=', now()->toDateString())
+                ->whereColumn('booked_count', '<', 'capacity')
+                ->orderBy('date')
+                ->get(['id', 'date', 'capacity', 'booked_count'])
+                ->map(fn ($slot) => [
+                    'id' => $slot->id,
+                    'date' => $slot->date->toDateString(),
+                    'capacity' => $slot->capacity,
+                    'spots_remaining' => $slot->spotsRemaining(),
+                ])
+                ->values()
+                ->all();
+        }
+
+        $blockedDates = [];
+        if ($theme === Theme::Bookings) {
+            $blockedDates = OrderItem::query()
+                ->where('product_id', $product->id)
+                ->whereHas('order', fn ($q) => $q->whereNotIn('status', ['cancelled']))
+                ->whereNotNull('options->check_in')
+                ->whereNotNull('options->check_out')
+                ->get(['options'])
+                ->map(fn ($item) => [
+                    'check_in' => $item->options['check_in'],
+                    'check_out' => $item->options['check_out'],
+                ])
+                ->values()
+                ->all();
+        }
+
+        $isAvailable = true;
+        if ($theme === Theme::Cars) {
+            $today = now()->toDateString();
+            $isAvailable = ! OrderItem::query()
+                ->where('product_id', $product->id)
+                ->whereHas('order', fn ($q) => $q->whereNotIn('status', ['cancelled']))
+                ->whereNotNull('options->pickup_date')
+                ->whereNotNull('options->return_date')
+                ->where('options->return_date', '>=', $today)
+                ->exists();
+        }
+
+        $settings = app(GeneralSettings::class);
+        $productName = is_array($product->name) ? ($product->name['en'] ?? '') : (string) $product->name;
+        $currency = $settings->currency ?? 'EUR';
+        $schema = array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => match ($theme) {
+                Theme::Bookings => 'LodgingBusiness',
+                Theme::Cars => 'Product',
+                Theme::Activities => $product->activityDetail?->event_date ? 'Event' : 'Product',
+                default => 'Product',
+            },
+            'name' => $productName,
+            'description' => $product->short_description ?? strip_tags((string) $product->description),
+            'image' => $product->image_url,
+            'url' => route('product.show', $product),
+            'offers' => [
+                '@type' => 'Offer',
+                'price' => (string) $product->price,
+                'priceCurrency' => $currency,
+                'availability' => $product->in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                'url' => route('product.show', $product),
+            ],
+            'aggregateRating' => $product->reviews_count > 0 ? [
+                '@type' => 'AggregateRating',
+                'ratingValue' => round((float) $product->reviews_avg_rating, 1),
+                'reviewCount' => $product->reviews_count,
+            ] : null,
+        ]);
 
         return Inertia::render('Product', [
             'activity' => $product,
             'product' => $product,
-            'related' => $related,
+            'recommended' => $recommended,
+            'spotsRemaining' => $spotsRemaining,
+            'availableSlots' => $availableSlots,
+            'blockedDates' => $blockedDates,
+            'isAvailable' => $isAvailable,
+            'schema' => $schema,
         ]);
     }
 }

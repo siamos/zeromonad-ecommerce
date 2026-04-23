@@ -118,6 +118,31 @@ class ProductResource extends Resource
                         ->helperText('e.g. bedrooms / 3, bathrooms / 2 for accommodation; vehicle_type / SUV, transmission / automatic for vehicle')
                         ->columnSpanFull()
                         ->visible(fn (Get $get) => in_array($get('activity_detail.booking_type'), ['accommodation', 'vehicle'])),
+                    Forms\Components\Repeater::make('activitySlots')
+                        ->label('Date Slots')
+                        ->relationship()
+                        ->schema([
+                            Forms\Components\DatePicker::make('date')
+                                ->label('Date')
+                                ->required()
+                                ->native(false),
+                            Forms\Components\TextInput::make('capacity')
+                                ->label('Capacity')
+                                ->numeric()
+                                ->minValue(1)
+                                ->required(),
+                            Forms\Components\TextInput::make('booked_count')
+                                ->label('Booked')
+                                ->numeric()
+                                ->default(0)
+                                ->disabled()
+                                ->dehydrated(),
+                        ])
+                        ->columns(3)
+                        ->columnSpanFull()
+                        ->addActionLabel('Add Date Slot')
+                        ->helperText('Add multiple date slots with individual capacities for this activity.')
+                        ->visible(fn (Get $get) => in_array($get('activity_detail.booking_type'), ['activity', 'tour', 'event', null])),
                 ])->columns(2),
 
             Section::make('Images')->schema([

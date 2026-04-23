@@ -2,6 +2,26 @@
   <Layout>
     <Head :title="t('checkout.title')" />
     <div class="max-w-4xl mx-auto px-4 py-10">
+      <Breadcrumb :items="[{ label: t('nav.home'), href: route('home') }, { label: t('shop.all_products'), href: route('shop') }, { label: t('cart.title'), href: route('cart.index') }, { label: t('checkout.title') }]" />
+
+      <!-- Step indicator -->
+      <div class="flex items-center gap-0 mb-8 mt-2">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">1</div>
+          <span class="text-sm text-indigo-600 font-semibold">{{ t('checkout.step_cart') }}</span>
+        </div>
+        <div class="flex-1 h-px bg-indigo-200 mx-3" />
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">2</div>
+          <span class="text-sm text-indigo-700 font-semibold">{{ t('checkout.step_details') }}</span>
+        </div>
+        <div class="flex-1 h-px bg-gray-200 mx-3" />
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-xs font-bold">3</div>
+          <span class="text-sm text-gray-400">{{ t('checkout.step_payment') }}</span>
+        </div>
+      </div>
+
       <h1 class="text-3xl font-bold text-gray-900 mb-8">{{ t('checkout.title') }}</h1>
 
       <form @submit.prevent="submitOrder" class="grid grid-cols-1 lg:grid-cols-5 gap-8">
@@ -80,15 +100,43 @@
                 <span>{{ item.product?.name }} × {{ item.quantity }}</span>
                 <span>{{ formatPrice(item.unit_price * item.quantity) }}</span>
               </div>
+              <div v-if="cart.discount_amount > 0" class="flex justify-between text-green-600">
+                <span>{{ t('checkout.discount') }}</span>
+                <span>-{{ formatPrice(cart.discount_amount) }}</span>
+              </div>
+              <div v-if="pointsDiscount > 0" class="flex justify-between text-indigo-600 text-xs">
+                <span>{{ t('checkout.points_discount') }}</span>
+                <span>-{{ formatPrice(pointsDiscount) }}</span>
+              </div>
               <div class="border-t border-gray-100 pt-3 flex justify-between font-bold text-gray-900">
                 <span>{{ t('checkout.total') }}</span>
-                <span>{{ formatPrice(cart.total) }}</span>
+                <span>{{ formatPrice(Math.max(0, cart.total - pointsDiscount)) }}</span>
               </div>
             </div>
+
+            <!-- Loyalty points redemption -->
+            <div v-if="pointsBalance > 0" class="mt-4 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-indigo-900">{{ t('checkout.use_points') }}</span>
+                <span class="text-xs text-indigo-600">{{ pointsBalance }} {{ t('checkout.points_available') }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="number" v-model.number="form.use_points" min="0" :max="maxRedeemable" step="100"
+                  class="w-24 border border-indigo-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                <span class="text-xs text-gray-500">{{ t('checkout.points_100_1_euro') }}</span>
+              </div>
+            </div>
+
             <button type="submit" :disabled="!form.payment_method"
               class="mt-6 w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors cursor-pointer">
               {{ t('checkout.place_order') }}
             </button>
+            <div class="flex items-center justify-center gap-2 mt-3 text-xs text-gray-400">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              {{ t('checkout.secure_badge') }}
+            </div>
           </div>
         </div>
       </form>
@@ -98,9 +146,10 @@
 
 <script setup>
 import { Head, router, usePage } from '@inertiajs/vue3'
-import { reactive } from 'vue'
+import { reactive, computed } from 'vue'
 import Layout from '../Layout.vue'
 import { useI18n } from '@/composables/useI18n'
+import Breadcrumb from '@/components/Breadcrumb.vue'
 
 const { t } = useI18n()
 const route = window.route
@@ -109,6 +158,7 @@ const props = defineProps({
   cart: Object,
   paymentMethods: Array,
   bankAccounts: Array,
+  pointsBalance: { type: Number, default: 0 },
 })
 
 const page = usePage()
@@ -123,7 +173,11 @@ const form = reactive({
     city: '',
     zip: '',
   },
+  use_points: 0,
 })
+
+const maxRedeemable = computed(() => Math.min(props.pointsBalance, Math.floor(props.cart.total * 100)))
+const pointsDiscount = computed(() => Math.min(form.use_points, props.pointsBalance) / 100)
 
 function formatPrice(price) {
   return new Intl.NumberFormat('el-GR', {

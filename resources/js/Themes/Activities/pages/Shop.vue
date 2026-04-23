@@ -86,6 +86,41 @@
             </select>
           </div>
 
+          <!-- Active filter chips -->
+          <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 mb-4">
+            <button v-if="filters.category" @click="removeFilter('category')"
+              class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-3 py-1 rounded-full hover:bg-emerald-100 transition-colors">
+              {{ categoryName }}
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <button v-if="filters.sort" @click="removeFilter('sort')"
+              class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-3 py-1 rounded-full hover:bg-emerald-100 transition-colors">
+              {{ sortLabel }}
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <button v-if="filters.date" @click="removeFilter('date')"
+              class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-3 py-1 rounded-full hover:bg-emerald-100 transition-colors">
+              {{ filters.date }}
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <button v-if="filters.max_price < 1000" @click="removeFilter('max_price')"
+              class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-3 py-1 rounded-full hover:bg-emerald-100 transition-colors">
+              Max €{{ filters.max_price }}
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <button @click="clearFilters" class="text-xs text-gray-400 hover:text-gray-600 underline ml-1">
+              {{ t('shop.clear_filters') }}
+            </button>
+          </div>
+
           <div v-if="activities.data.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <ActivityCard
               v-for="activity in activities.data"
@@ -148,12 +183,28 @@ const hasActiveFilters = computed(() =>
   filters.category || filters.date || filters.max_price < 1000 || filters.sort
 )
 
+const categoryName = computed(() =>
+  props.categories?.find(c => c.slug === filters.category)?.name ?? ''
+)
+
+const sortLabel = computed(() => ({
+  price_asc: t('shop.sort_price_asc'),
+  price_desc: t('shop.sort_price_desc'),
+  date_asc: t('shop.sort_date_asc'),
+  name_asc: t('shop.sort_name_asc'),
+})[filters.sort] ?? '')
+
 function applyFilters() {
   router.get(route('shop'), filters, { preserveState: true, replace: true })
 }
 
 function clearFilters() {
   Object.assign(filters, { category: '', date: '', max_price: 1000, sort: '' })
+  applyFilters()
+}
+
+function removeFilter(key) {
+  if (key === 'max_price') { filters.max_price = 1000 } else { filters[key] = '' }
   applyFilters()
 }
 </script>

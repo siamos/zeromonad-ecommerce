@@ -4,11 +4,16 @@
 
     <!-- Hero -->
     <section class="relative bg-gradient-to-br from-amber-600 to-orange-700 text-white py-28 overflow-hidden">
-      <div class="absolute inset-0 opacity-10 bg-[url('/images/pattern.svg')]"></div>
+      <div v-if="$page.props.hero_image_url" class="absolute inset-0 bg-cover bg-center"
+        :style="{ backgroundImage: `url(${$page.props.hero_image_url})` }">
+        <div class="absolute inset-0 bg-amber-900/60"></div>
+      </div>
+      <div v-else class="absolute inset-0 opacity-10 bg-[url('/images/pattern.svg')]"></div>
       <div class="relative max-w-7xl mx-auto px-4 text-center">
-        <h1 class="text-5xl font-bold mb-6 leading-tight" v-html="t('home.hero_title_bookings').replace('\n', '<br />')"></h1>
+        <h1 class="text-5xl font-bold mb-6 leading-tight"
+          v-html="($page.props.hero_title || t('home.hero_title_bookings')).replace('\n', '<br />')"></h1>
         <p class="text-xl text-amber-100 mb-8 max-w-2xl mx-auto">
-          {{ t('home.hero_subtitle_bookings') }}
+          {{ $page.props.hero_subtitle || t('home.hero_subtitle_bookings') }}
         </p>
         <Link :href="route('shop')"
           class="bg-white text-amber-700 font-bold px-8 py-3 rounded-full hover:bg-amber-50 transition-colors inline-block">

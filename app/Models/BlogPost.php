@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Scout\Searchable;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Spatie\Translatable\HasTranslations;
 
 class BlogPost extends Model
 {
-    use HasSlug, HasTranslations;
+    use HasSlug, HasTranslations, Searchable;
 
     public array $translatable = ['title', 'excerpt', 'content'];
 
@@ -54,6 +55,21 @@ class BlogPost extends Model
         }
 
         return $array;
+    }
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'title' => collect($this->getTranslations('title'))->values()->implode(' '),
+            'excerpt' => collect($this->getTranslations('excerpt'))->values()->implode(' '),
+        ];
+    }
+
+    public function shouldBeSearchable(): bool
+    {
+        return $this->status === 'published'
+            && $this->published_at !== null
+            && $this->published_at->lte(now());
     }
 
     public function scopePublished($query)

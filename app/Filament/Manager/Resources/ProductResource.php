@@ -13,6 +13,7 @@ use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -28,25 +29,60 @@ class ProductResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
+    public static function canCreate(): bool
+    {
+        return true;
+    }
+
     public static function form(Schema $schema): Schema
     {
+        $isCreate = $schema->getOperation() === 'create';
+
         return $schema->schema([
-            Section::make()->schema([
-                Forms\Components\TextInput::make('sku')->disabled(),
+            Section::make('Product Details')->schema([
+                Forms\Components\TextInput::make('name.en')
+                    ->label('Name (EN)')
+                    ->required()
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn ($state, Set $set) => $set('slug', str($state)->slug()))
+                    ->visible($isCreate),
+                Forms\Components\TextInput::make('slug')
+                    ->required()
+                    ->unique(ignoreRecord: true)
+                    ->visible($isCreate),
+                Forms\Components\Select::make('category_id')
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->visible($isCreate),
+                Forms\Components\TextInput::make('sku')
+                    ->disabled(! $isCreate)
+                    ->dehydrated(! $isCreate ? false : null),
                 Forms\Components\TextInput::make('price')->numeric()->prefix('€')->required(),
                 Forms\Components\TextInput::make('stock')->numeric()->required(),
                 Forms\Components\Select::make('status')
                     ->options(['draft' => 'Draft', 'published' => 'Published', 'archived' => 'Archived'])
+                    ->default('draft')
                     ->required(),
                 Forms\Components\Toggle::make('featured'),
             ])->columns(2),
 
             Section::make('Translations')->schema([
                 Tabs::make('Language')->tabs([
-                    Tabs\Tab::make('English (Reference)')->schema([
-                        Forms\Components\TextInput::make('name.en')->label('Name (EN)')->disabled(),
-                        Forms\Components\TextInput::make('short_description.en')->label('Short Description (EN)')->disabled()->columnSpanFull(),
-                        Forms\Components\Textarea::make('description.en')->label('Description (EN)')->disabled()->rows(4)->columnSpanFull(),
+                    Tabs\Tab::make('English')->schema([
+                        Forms\Components\TextInput::make('name.en')
+                            ->label('Name (EN)')
+                            ->disabled()
+                            ->visible(! $isCreate),
+                        Forms\Components\TextInput::make('short_description.en')
+                            ->label('Short Description (EN)')
+                            ->disabled(! $isCreate)
+                            ->columnSpanFull(),
+                        Forms\Components\RichEditor::make('description.en')
+                            ->label('Description (EN)')
+                            ->disabled(! $isCreate)
+                            ->columnSpanFull(),
                     ])->columns(2),
 
                     Tabs\Tab::make('Greek (Ελληνικά)')->schema([

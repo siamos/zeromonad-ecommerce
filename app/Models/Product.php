@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -17,7 +18,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Product extends Model implements HasMedia
 {
-    use HasSlug, HasTags, HasTranslations, InteractsWithMedia, SoftDeletes;
+    use HasSlug, HasTags, HasTranslations, InteractsWithMedia, Searchable, SoftDeletes;
 
     public array $translatable = ['name', 'description', 'short_description'];
 
@@ -97,6 +98,11 @@ class Product extends Model implements HasMedia
         return $this->hasMany(OrderItem::class);
     }
 
+    public function activitySlots(): HasMany
+    {
+        return $this->hasMany(ActivitySlot::class);
+    }
+
     public function toArray(): array
     {
         $array = parent::toArray();
@@ -117,6 +123,31 @@ class Product extends Model implements HasMedia
     public function getInStockAttribute(): bool
     {
         return $this->stock > 0;
+    }
+
+    public function scopeRecommended($query, self $current, int $limit = 4)
+    {
+        return $query->where('status', 'published')
+            ->where('id', '!=', $current->id)
+            ->where('category_id', $current->category_id)
+            ->withCount('reviews')
+            ->orderByDesc('reviews_count')
+            ->orderByDesc('featured')
+            ->limit($limit);
+    }
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'name' => collect($this->getTranslations('name'))->values()->implode(' '),
+            'short_description' => collect($this->getTranslations('short_description'))->values()->implode(' '),
+            'sku' => $this->sku,
+        ];
+    }
+
+    public function shouldBeSearchable(): bool
+    {
+        return $this->isPublished();
     }
 
     public function isPublished(): bool

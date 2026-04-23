@@ -14,6 +14,7 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
+        'guest_token',
         'coupon_id',
         'order_number',
         'status',
@@ -35,14 +36,14 @@ class Order extends Model
     protected function casts(): array
     {
         return [
-            'subtotal'             => 'decimal:2',
-            'discount_amount'      => 'decimal:2',
-            'tax_amount'           => 'decimal:2',
-            'shipping_amount'      => 'decimal:2',
-            'total'                => 'decimal:2',
-            'billing_address'      => 'array',
-            'shipping_address'     => 'array',
-            'payment_verified_at'  => 'datetime',
+            'subtotal' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
+            'shipping_amount' => 'decimal:2',
+            'total' => 'decimal:2',
+            'billing_address' => 'array',
+            'shipping_address' => 'array',
+            'payment_verified_at' => 'datetime',
         ];
     }
 
@@ -80,7 +81,7 @@ class Order extends Model
 
         static::creating(function (self $order) {
             if (empty($order->order_number)) {
-                $order->order_number = 'ORD-' . strtoupper(uniqid());
+                $order->order_number = 'ORD-'.strtoupper(uniqid());
             }
         });
     }

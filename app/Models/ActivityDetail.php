@@ -34,13 +34,29 @@ class ActivityDetail extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function bookedCount(): int
+    {
+        return (int) $this->product->orderItems()
+            ->whereHas('order', fn ($q) => $q->whereNotIn('status', ['cancelled']))
+            ->sum('quantity');
+    }
+
+    public function spotsRemaining(): int
+    {
+        return max(0, ($this->capacity ?? 0) - $this->bookedCount());
+    }
+
     public function isFull(): bool
     {
-        return $this->product->orderItems()->count() >= $this->capacity;
+        return $this->capacity !== null && $this->spotsRemaining() === 0;
     }
 
     public function isBookingOpen(): bool
     {
+        if (! $this->event_date || ! $this->booking_cutoff_hours) {
+            return true;
+        }
+
         return now()->addHours($this->booking_cutoff_hours)->lt($this->event_date);
     }
 }

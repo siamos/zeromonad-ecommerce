@@ -1,10 +1,12 @@
 {
     "mcpServers": {
         "laravel-boost": {
-            "command": "vendor/bin/sail",
+            "command": "wsl.exe",
             "args": [
-                "artisan",
-                "boost:mcp"
+                "-e",
+                "bash",
+                "-c",
+                "cd ~/zeromonad-ecommerce && vendor/bin/sail artisan boost:mcp"
             ]
         }
     }

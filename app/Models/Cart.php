@@ -13,6 +13,7 @@ class Cart extends Model
         'user_id',
         'coupon_id',
         'session_id',
+        'reminder_sent_at',
     ];
 
     protected $appends = ['subtotal', 'discount_amount', 'discount', 'total', 'item_count'];

@@ -38,6 +38,49 @@
             </dl>
           </div>
 
+          <!-- Wishlist -->
+          <div v-if="wishlistItems?.length" class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h2 class="text-lg font-semibold text-gray-900">{{ t('account.wishlist') }}</h2>
+              <span class="text-sm text-gray-400">{{ wishlistItems.length }} {{ t('account.wishlist_items') }}</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6">
+              <div v-for="item in wishlistItems" :key="item.id"
+                class="flex gap-3 border border-gray-100 rounded-xl p-3">
+                <Link :href="route('product.show', item.slug)">
+                  <img :src="item.image_url" :alt="item.name" class="w-16 h-16 rounded-lg object-cover shrink-0" />
+                </Link>
+                <div class="flex-1 min-w-0">
+                  <Link :href="route('product.show', item.slug)">
+                    <div class="font-medium text-sm text-gray-900 truncate hover:text-indigo-600">{{ item.name }}</div>
+                  </Link>
+                  <div class="text-sm font-bold text-indigo-600 mt-0.5">{{ formatPrice(item.price) }}</div>
+                  <button @click="removeFromWishlist(item.id)"
+                    class="text-xs text-gray-400 hover:text-red-500 mt-1 cursor-pointer">
+                    {{ t('account.wishlist_remove') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loyalty Points -->
+          <div v-if="user?.points_balance !== undefined" class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h2 class="text-lg font-semibold text-gray-900">{{ t('account.loyalty_points') }}</h2>
+              <span class="text-2xl font-bold text-indigo-600">{{ user.points_balance }} <span class="text-sm font-normal text-gray-400">{{ t('account.points') }}</span></span>
+            </div>
+            <div v-if="pointsHistory?.length" class="divide-y divide-gray-100">
+              <div v-for="tx in pointsHistory" :key="tx.id" class="px-6 py-3 flex items-center justify-between text-sm">
+                <span class="text-gray-600">{{ tx.description }}</span>
+                <span :class="tx.points > 0 ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'">
+                  {{ tx.points > 0 ? '+' : '' }}{{ tx.points }}
+                </span>
+              </div>
+            </div>
+            <p v-else class="text-center text-sm text-gray-400 py-6">{{ t('account.no_points_yet') }}</p>
+          </div>
+
           <!-- Orders -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-100">
             <div class="p-6 border-b border-gray-100 flex items-center justify-between">
@@ -102,7 +145,7 @@ import { useI18n } from '@/composables/useI18n'
 const { t } = useI18n()
 const route = window.route
 
-const props = defineProps({ orders: Object })
+const props = defineProps({ orders: Object, wishlistItems: Array, user: Object, pointsHistory: Array })
 const page = usePage()
 
 function formatPrice(price) {
@@ -110,5 +153,20 @@ function formatPrice(price) {
     style: 'currency',
     currency: page.props.currency ?? 'EUR',
   }).format(price)
+}
+
+async function removeFromWishlist(productId) {
+  await fetch(route('wishlist.toggle'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ product_id: productId }),
+  })
+  page.props.wishlist_ids = (page.props.wishlist_ids ?? []).filter(id => id !== productId)
+  const idx = props.wishlistItems.findIndex(i => i.id === productId)
+  if (idx !== -1) props.wishlistItems.splice(idx, 1)
 }
 </script>
