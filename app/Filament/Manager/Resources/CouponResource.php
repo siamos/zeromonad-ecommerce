@@ -1,0 +1,96 @@
+<?php
+
+namespace App\Filament\Manager\Resources;
+
+use App\Filament\Manager\Resources\CouponResource\Pages;
+use App\Models\Coupon;
+use App\Settings\GeneralSettings;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+
+class CouponResource extends Resource
+{
+    protected static ?string $model = Coupon::class;
+
+    public static function getNavigationIcon(): string|\BackedEnum|null
+    {
+        return 'heroicon-o-ticket';
+    }
+
+    protected static ?int $navigationSort = 30;
+
+    public static function canCreate(): bool
+    {
+        return true;
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $theme = app(GeneralSettings::class)->active_theme;
+
+        return parent::getEloquentQuery()
+            ->where(fn ($q) => $q->where('theme', $theme)->orWhereNull('theme'));
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->schema([
+            Section::make()->schema([
+                Forms\Components\TextInput::make('code')->required()->unique(ignoreRecord: true)
+                    ->afterStateUpdated(fn (Set $set, $state) => $set('code', strtoupper($state))),
+                Forms\Components\Select::make('type')
+                    ->options(['percentage' => 'Percentage', 'fixed' => 'Fixed Amount'])
+                    ->required()->live(),
+                Forms\Components\TextInput::make('value')->numeric()->required()
+                    ->suffix(fn (Get $get) => $get('type') === 'percentage' ? '%' : '€'),
+                Forms\Components\TextInput::make('minimum_amount')->numeric()->prefix('€'),
+                Forms\Components\TextInput::make('max_uses')->numeric(),
+                Forms\Components\DateTimePicker::make('expires_at'),
+                Forms\Components\Toggle::make('is_active')->default(true),
+            ])->columns(2),
+        ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('code')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('type')->badge(),
+                Tables\Columns\TextColumn::make('value'),
+                Tables\Columns\TextColumn::make('uses_count')->label('Used')->sortable(),
+                Tables\Columns\TextColumn::make('max_uses')->label('Max'),
+                Tables\Columns\TextColumn::make('expires_at')->date()->sortable(),
+                Tables\Columns\IconColumn::make('is_active')->boolean(),
+            ])
+            ->actions([
+                EditAction::make(),
+                DeleteAction::make(),
+            ])
+            ->bulkActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListCoupons::route('/'),
+            'create' => Pages\CreateCoupon::route('/create'),
+            'edit' => Pages\EditCoupon::route('/{record}/edit'),
+        ];
+    }
+}

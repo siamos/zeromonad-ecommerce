@@ -26,6 +26,11 @@ class CouponResource extends Resource
         return 'heroicon-o-ticket';
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Products';
+    }
+
     protected static ?int $navigationSort = 50;
 
     public static function form(Schema $schema): Schema
@@ -34,6 +39,16 @@ class CouponResource extends Resource
             Section::make()->schema([
                 Forms\Components\TextInput::make('code')->required()->unique(ignoreRecord: true)
                     ->afterStateUpdated(fn (Set $set, $state) => $set('code', strtoupper($state))),
+                Forms\Components\Select::make('theme')
+                    ->options([
+                        'Products' => 'Products',
+                        'Activities' => 'Activities',
+                        'Bookings' => 'Bookings',
+                        'Cars' => 'Cars',
+                    ])
+                    ->placeholder('All Themes')
+                    ->nullable()
+                    ->helperText('Limit this coupon to a specific theme.'),
                 Forms\Components\Select::make('type')
                     ->options(['percentage' => 'Percentage', 'fixed' => 'Fixed Amount'])
                     ->required()->live(),

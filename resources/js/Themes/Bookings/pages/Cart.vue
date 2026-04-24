@@ -75,14 +75,14 @@
             </div>
 
             <!-- Coupon -->
-            <form @submit.prevent="applyCoupon" class="flex gap-2">
+            <form @submit.prevent="applyCoupon" class="flex flex-col gap-2 sm:flex-row">
               <input
                 v-model="couponCode"
                 type="text"
                 :placeholder="t('cart.coupon_placeholder')"
-                class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                class="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
-              <button type="submit" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
+              <button type="submit" class="w-full sm:w-auto whitespace-nowrap bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
                 {{ t('cart.coupon_apply') }}
               </button>
             </form>

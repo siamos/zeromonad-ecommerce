@@ -1,6 +1,14 @@
 <template>
   <Layout>
     <Head title="Booking Confirmed" />
+    <OrderSuccessModal
+      :order="order"
+      :is-guest="isGuest"
+      title="Booking Confirmed!"
+      subtitle="Thank you for your booking."
+      view-orders-label="View My Bookings"
+      shop-label="Browse Activities"
+    />
     <div class="max-w-2xl mx-auto px-4 py-16 text-center">
 
       <!-- Success icon -->
@@ -74,6 +82,7 @@
 <script setup>
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import Layout from '../Layout.vue'
+import OrderSuccessModal from '@/components/OrderSuccessModal.vue'
 import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()

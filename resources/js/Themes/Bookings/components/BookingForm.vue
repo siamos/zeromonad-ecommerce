@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6">
     <!-- Out-of-stock: notify me form -->
-    <template v-if="!activity.in_stock">
+    <template v-if="false">
       <div class="text-center py-4 mb-4">
         <span class="inline-block bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full">{{ t('booking.sold_out') }}</span>
       </div>
@@ -18,8 +18,8 @@
 
     <template v-else>
     <h3 class="font-bold text-gray-900 text-lg mb-1">{{ t('booking.title_stay') }}</h3>
-    <p v-if="activity.activity_detail?.capacity" class="text-sm text-gray-500 mb-4">
-      {{ spotsLeft }} {{ t('booking.spots_remaining') }}
+    <p v-if="accommodation.max_guests" class="text-sm text-gray-500 mb-4">
+      {{ t('booking.max_guests', { count: accommodation.max_guests }) }}
     </p>
 
     <form @submit.prevent="submit" class="space-y-4">
@@ -55,7 +55,7 @@
             <button type="button" @click="form.adults = Math.max(1, form.adults - 1)"
               class="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-amber-500 hover:text-amber-600 transition-colors cursor-pointer text-sm">−</button>
             <span class="w-6 text-center font-semibold text-gray-900 text-sm">{{ form.adults }}</span>
-            <button type="button" @click="form.adults = Math.min(maxGuests, form.adults + 1)"
+            <button type="button" @click="form.adults = Math.min(maxGuests, form.adults + form.children + 1)"
               class="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-amber-500 hover:text-amber-600 transition-colors cursor-pointer text-sm">+</button>
           </div>
         </div>
@@ -73,12 +73,12 @@
 
       <div class="border-t border-gray-100 pt-4 space-y-1">
         <div class="flex justify-between text-sm text-gray-600">
-          <span>{{ formatPrice(activity.price) }} × {{ nights || 1 }} {{ t('booking.nights') }}</span>
-          <span>{{ formatPrice(activity.price * (nights || 1)) }}</span>
+          <span>{{ formatPrice(accommodation.price_per_night) }} × {{ nights || 1 }} {{ t('booking.nights') }}</span>
+          <span>{{ formatPrice(accommodation.price_per_night * (nights || 1)) }}</span>
         </div>
         <div class="flex justify-between font-bold text-gray-900">
           <span>{{ t('booking.total') }}</span>
-          <span>{{ formatPrice(activity.price * (nights || 1)) }}</span>
+          <span>{{ formatPrice(accommodation.price_per_night * (nights || 1)) }}</span>
         </div>
       </div>
 
@@ -100,20 +100,21 @@ import { useCartModal } from '@/composables/useCartModal'
 const { t } = useI18n()
 const { openModal } = useCartModal()
 const route = window.route
-const props = defineProps({ activity: Object, blockedDates: { type: Array, default: () => [] } })
+const props = defineProps({ accommodation: Object, blockedDates: { type: Array, default: () => [] } })
 const page = usePage()
 
 const today = new Date().toISOString().split('T')[0]
-const maxGuests = computed(() => props.activity.activity_detail?.capacity ?? 99)
-const spotsLeft = computed(() => props.activity.activity_detail?.capacity ?? '∞')
+const maxGuests = computed(() => props.accommodation.max_guests ?? 99)
+const spotsLeft = computed(() => props.accommodation.max_guests ?? '∞')
 
 const form = reactive({
-  product_id: props.activity.id,
-  quantity:   1,
-  check_in:   '',
-  check_out:  '',
-  adults:     1,
-  children:   0,
+  bookable_type: 'accommodation',
+  bookable_id:   props.accommodation.id,
+  quantity:      1,
+  check_in:      '',
+  check_out:     '',
+  adults:        1,
+  children:      0,
 })
 
 const submitting = ref(false)
@@ -152,7 +153,7 @@ function submit() {
   submitting.value = true
   router.post(route('cart.add'), form, {
     preserveScroll: true,
-    onSuccess: () => openModal(props.activity.name),
+    onSuccess: () => openModal(props.accommodation.name),
     onFinish: () => { submitting.value = false },
   })
 }
@@ -166,7 +167,7 @@ async function submitAlert() {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
       },
-      body: JSON.stringify({ product_id: props.activity.id, email: alertEmail.value }),
+      body: JSON.stringify({ bookable_type: 'accommodation', bookable_id: props.accommodation.id, email: alertEmail.value }),
     })
     alertSent.value = true
   } finally {

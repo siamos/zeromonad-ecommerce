@@ -17,24 +17,34 @@ class Coupon extends Model
         'starts_at',
         'expires_at',
         'active',
+        'theme',
     ];
 
     protected function casts(): array
     {
         return [
-            'value'            => 'decimal:2',
+            'value' => 'decimal:2',
             'min_order_amount' => 'decimal:2',
-            'max_uses'         => 'integer',
-            'uses_count'       => 'integer',
-            'starts_at'        => 'datetime',
-            'expires_at'       => 'datetime',
-            'active'           => 'boolean',
+            'max_uses' => 'integer',
+            'uses_count' => 'integer',
+            'starts_at' => 'datetime',
+            'expires_at' => 'datetime',
+            'active' => 'boolean',
         ];
     }
 
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function scopeForTheme($query, ?string $theme)
+    {
+        if (! $theme) {
+            return $query;
+        }
+
+        return $query->where(fn ($q) => $q->where('theme', $theme)->orWhereNull('theme'));
     }
 
     public function isValid(): bool

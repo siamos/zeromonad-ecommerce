@@ -16,6 +16,7 @@ class Category extends Model
         'parent_id',
         'name',
         'slug',
+        'theme',
         'description',
         'image',
         'sort_order',
@@ -46,5 +47,14 @@ class Category extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function scopeForTheme($query, ?string $theme)
+    {
+        if (! $theme) {
+            return $query;
+        }
+
+        return $query->where(fn ($q) => $q->where('theme', $theme)->orWhereNull('theme'));
     }
 }

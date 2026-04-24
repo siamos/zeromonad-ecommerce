@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Review extends Model
 {
     protected $fillable = [
         'product_id',
+        'reviewable_type',
+        'reviewable_id',
         'user_id',
         'rating',
         'title',
@@ -21,6 +24,11 @@ class Review extends Model
         return [
             'rating' => 'integer',
         ];
+    }
+
+    public function reviewable(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     public function product(): BelongsTo

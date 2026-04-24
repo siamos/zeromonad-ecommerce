@@ -55,6 +55,11 @@ class SiteSettings extends Page implements HasForms
             'currency' => $settings->currency,
             'tax_rate' => $settings->tax_rate,
             'low_stock_threshold' => $settings->low_stock_threshold,
+            'free_shipping_threshold' => $settings->free_shipping_threshold,
+            'products_palette' => $settings->products_palette,
+            'activities_palette' => $settings->activities_palette,
+            'bookings_palette' => $settings->bookings_palette,
+            'cars_palette' => $settings->cars_palette,
         ]);
     }
 
@@ -77,6 +82,23 @@ class SiteSettings extends Page implements HasForms
                 TextInput::make('currency')->required()->maxLength(3)->label('Currency (ISO code)'),
                 TextInput::make('tax_rate')->numeric()->suffix('%')->label('Tax Rate'),
                 TextInput::make('low_stock_threshold')->numeric()->label('Low Stock Alert Threshold'),
+                TextInput::make('free_shipping_threshold')->numeric()->prefix('€')->label('Free Shipping Threshold'),
+                Select::make('products_palette')
+                    ->label('Products Theme Palette')
+                    ->options(['indigo' => 'Indigo', 'violet' => 'Violet', 'blue' => 'Blue', 'emerald' => 'Emerald'])
+                    ->required(),
+                Select::make('activities_palette')
+                    ->label('Activities Theme Palette')
+                    ->options(['emerald' => 'Emerald', 'teal' => 'Teal', 'cyan' => 'Cyan', 'green' => 'Green'])
+                    ->required(),
+                Select::make('bookings_palette')
+                    ->label('Bookings Theme Palette')
+                    ->options(['amber' => 'Amber', 'orange' => 'Orange', 'rose' => 'Rose', 'pink' => 'Pink'])
+                    ->required(),
+                Select::make('cars_palette')
+                    ->label('Cars Theme Palette')
+                    ->options(['slate' => 'Slate', 'zinc' => 'Zinc', 'stone' => 'Stone', 'neutral' => 'Neutral'])
+                    ->required(),
                 Actions::make($this->getFormActions()),
             ])
             ->statePath('data');
@@ -94,6 +116,11 @@ class SiteSettings extends Page implements HasForms
         $settings->currency = $data['currency'];
         $settings->tax_rate = (float) $data['tax_rate'];
         $settings->low_stock_threshold = (int) $data['low_stock_threshold'];
+        $settings->free_shipping_threshold = (int) $data['free_shipping_threshold'];
+        $settings->products_palette = $data['products_palette'];
+        $settings->activities_palette = $data['activities_palette'];
+        $settings->bookings_palette = $data['bookings_palette'];
+        $settings->cars_palette = $data['cars_palette'];
         $settings->save();
 
         if ($data['active_theme'] !== $oldTheme) {

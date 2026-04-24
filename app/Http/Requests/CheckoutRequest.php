@@ -23,6 +23,12 @@ class CheckoutRequest extends FormRequest
             'billing_address.city' => 'required|string|max:100',
             'billing_address.zip' => 'required|string|max:20',
             'shipping_address' => 'nullable|array',
+            'shipping_address.name' => 'nullable|string|max:255',
+            'shipping_address.email' => 'nullable|email|max:255',
+            'shipping_address.phone' => 'nullable|string|max:50',
+            'shipping_address.line1' => 'nullable|string|max:255',
+            'shipping_address.city' => 'nullable|string|max:100',
+            'shipping_address.zip' => 'nullable|string|max:20',
             'use_points' => 'nullable|integer|min:0',
         ];
     }

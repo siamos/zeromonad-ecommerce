@@ -63,6 +63,49 @@
             </div>
           </div>
 
+          <!-- Shipping Address -->
+          <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-semibold text-gray-900">Shipping Address</h2>
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" v-model="sameAsBilling" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-400" />
+                <span class="text-sm text-gray-600">Same as billing</span>
+              </label>
+            </div>
+            <div v-if="!sameAsBilling" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.full_name') }}</label>
+                <input v-model="form.shipping_address.name" type="text" required
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.email') }}</label>
+                <input v-model="form.shipping_address.email" type="email"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.phone') }}</label>
+                <input v-model="form.shipping_address.phone" type="tel"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.address') }}</label>
+                <input v-model="form.shipping_address.line1" type="text" required
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.city') }}</label>
+                <input v-model="form.shipping_address.city" type="text" required
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.postal_code') }}</label>
+                <input v-model="form.shipping_address.zip" type="text" required
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none" />
+              </div>
+            </div>
+          </div>
+
           <!-- Payment Method -->
           <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ t('checkout.payment_method') }}</h2>
@@ -146,7 +189,7 @@
 
 <script setup>
 import { Head, router, usePage } from '@inertiajs/vue3'
-import { reactive, computed } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import Layout from '../Layout.vue'
 import { useI18n } from '@/composables/useI18n'
 import Breadcrumb from '@/components/Breadcrumb.vue'
@@ -163,11 +206,21 @@ const props = defineProps({
 
 const page = usePage()
 
+const sameAsBilling = ref(true)
+
 const form = reactive({
   payment_method: props.paymentMethods?.[0]?.key ?? '',
   billing_address: {
     name: page.props.auth.user?.name ?? '',
     email: page.props.auth.user?.email ?? '',
+    phone: '',
+    line1: '',
+    city: '',
+    zip: '',
+  },
+  shipping_address: {
+    name: '',
+    email: '',
     phone: '',
     line1: '',
     city: '',
@@ -187,6 +240,10 @@ function formatPrice(price) {
 }
 
 function submitOrder() {
-  router.post(route('checkout.process'), form)
+  const payload = { ...form }
+  if (sameAsBilling.value) {
+    payload.shipping_address = { ...form.billing_address }
+  }
+  router.post(route('checkout.process'), payload)
 }
 </script>

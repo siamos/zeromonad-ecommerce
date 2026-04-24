@@ -6,13 +6,14 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\PaymentGateways\PaymentGatewayManager;
 use App\Settings\PaymentSettings;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CheckoutController extends Controller
 {
-    public function index(Request $request, PaymentGatewayManager $gateways, PaymentSettings $paymentSettings): Response
+    public function index(Request $request, PaymentGatewayManager $gateways, PaymentSettings $paymentSettings): Response|RedirectResponse
     {
         $cart = auth()->check()
             ? Cart::with(['items.product.activityDetail', 'coupon'])->where('user_id', auth()->id())->first()

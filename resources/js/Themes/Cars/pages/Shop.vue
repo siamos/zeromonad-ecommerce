@@ -71,7 +71,7 @@
           <div class="flex items-center justify-between mb-6">
             <div>
               <h1 class="text-2xl font-bold text-gray-900">{{ t('shop.all_listings') }}</h1>
-              <p class="text-sm text-gray-500 mt-1">{{ activities.total }} {{ t('shop.listings_found') }}</p>
+              <p class="text-sm text-gray-500 mt-1">{{ vehicles.total }} {{ t('shop.listings_found') }}</p>
             </div>
             <select
               v-model="filters.sort"
@@ -121,11 +121,11 @@
             </button>
           </div>
 
-          <div v-if="activities.data.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-if="vehicles.data.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <ActivityCard
-              v-for="activity in activities.data"
-              :key="activity.id"
-              :activity="activity"
+              v-for="vehicle in vehicles.data"
+              :key="vehicle.id"
+              :activity="vehicle"
             />
           </div>
 
@@ -139,9 +139,9 @@
           </div>
 
           <!-- Pagination -->
-          <div v-if="activities.last_page > 1" class="mt-10 flex justify-center gap-2">
+          <div v-if="vehicles.last_page > 1" class="mt-10 flex justify-center gap-2">
             <a
-              v-for="link in activities.links"
+              v-for="link in vehicles.links"
               :key="link.label"
               :href="link.url ?? '#'"
               :class="['px-3 py-2 rounded-lg text-sm border', link.active
@@ -167,7 +167,7 @@ const { t } = useI18n()
 const route = window.route
 
 const props = defineProps({
-  activities: Object,
+  vehicles: Object,
   categories: Array,
   filters: Object,
 })

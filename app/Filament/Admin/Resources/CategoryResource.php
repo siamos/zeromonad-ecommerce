@@ -25,6 +25,11 @@ class CategoryResource extends Resource
         return 'heroicon-o-tag';
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Products';
+    }
+
     protected static ?int $navigationSort = 20;
 
     public static function form(Schema $schema): Schema
@@ -34,7 +39,17 @@ class CategoryResource extends Resource
                 Forms\Components\TextInput::make('name')->required()->live(onBlur: true)
                     ->afterStateUpdated(fn ($state, Set $set) => $set('slug', str($state)->slug())),
                 Forms\Components\TextInput::make('slug')->required()->unique(ignoreRecord: true),
-                Forms\Components\Textarea::make('description')->rows(3),
+                Forms\Components\Select::make('theme')
+                    ->options([
+                        'Products' => 'Products',
+                        'Activities' => 'Activities',
+                        'Bookings' => 'Bookings',
+                        'Cars' => 'Cars',
+                    ])
+                    ->placeholder('All Themes')
+                    ->nullable()
+                    ->helperText('Leave blank to show in all themes.'),
+                Forms\Components\Textarea::make('description')->rows(3)->columnSpanFull(),
             ])->columns(2),
         ]);
     }
@@ -45,6 +60,15 @@ class CategoryResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('slug')->searchable()->toggleable(),
+                Tables\Columns\TextColumn::make('theme')->badge()
+                    ->default('All')
+                    ->color(fn ($state) => match ($state) {
+                        'Activities' => 'success',
+                        'Bookings' => 'warning',
+                        'Cars' => 'gray',
+                        'Products' => 'info',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('products_count')->counts('products')->label('Products'),
                 Tables\Columns\TextColumn::make('created_at')->date()->sortable()->toggleable(),
             ])

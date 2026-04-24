@@ -93,7 +93,7 @@ const props = defineProps({ activity: Object })
 const page = usePage()
 const { t } = useI18n()
 const route = window.route
-const { isWishlisted, loading, toggle } = useWishlist(props.activity.id)
+const { isWishlisted, loading, toggle } = useWishlist(props.activity.id, 'activity')
 
 const isNew = computed(() => {
   if (!props.activity.created_at) { return false }

@@ -21,6 +21,7 @@ class GeneralSettingsSeeder extends Seeder
         $general->hero_title = null;
         $general->hero_subtitle = null;
         $general->hero_image = null;
+        $general->free_shipping_threshold = 50;
         $general->save();
 
         $payments = app(PaymentSettings::class);

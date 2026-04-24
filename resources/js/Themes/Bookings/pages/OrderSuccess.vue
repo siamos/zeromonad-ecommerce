@@ -1,6 +1,14 @@
 <template>
   <Layout>
     <Head title="Stay Confirmed" />
+    <OrderSuccessModal
+      :order="order"
+      :is-guest="isGuest"
+      title="Stay Confirmed!"
+      subtitle="Thank you for your booking."
+      view-orders-label="View My Stays"
+      shop-label="Browse More Stays"
+    />
     <div class="max-w-2xl mx-auto px-4 py-16 text-center">
 
       <div class="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full bg-amber-100">
@@ -70,6 +78,7 @@
 <script setup>
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import Layout from '../Layout.vue'
+import OrderSuccessModal from '@/components/OrderSuccessModal.vue'
 import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()

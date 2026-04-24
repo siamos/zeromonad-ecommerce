@@ -26,6 +26,11 @@ class UserResource extends Resource
         return 'heroicon-o-users';
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Orders & Customers';
+    }
+
     protected static ?int $navigationSort = 10;
 
     public static function form(Schema $schema): Schema

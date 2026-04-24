@@ -31,7 +31,7 @@
               <div class="flex items-start justify-between mb-3">
                 <div>
                   <span class="font-semibold text-gray-900">#{{ order.order_number }}</span>
-                  <span class="text-sm text-gray-400 ml-2">{{ order.created_at }}</span>
+                  <span class="text-sm text-gray-400 ml-2">{{ formatDate(order.created_at) }}</span>
                 </div>
                 <div class="flex gap-2">
                   <span :class="statusClass(order.status)" class="text-xs px-2.5 py-1 rounded-full font-semibold capitalize">
@@ -101,6 +101,14 @@ const route = window.route
 const props = defineProps({ user: Object, orders: Object })
 const page = usePage()
 const initials = computed(() => props.user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2))
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  return new Intl.DateTimeFormat(page.props.locale === 'el' ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  }).format(new Date(dateStr))
+}
 
 function formatPrice(price) {
   return new Intl.NumberFormat('el-GR', {

@@ -81,55 +81,16 @@
             <p v-else class="text-center text-sm text-gray-400 py-6">{{ t('account.no_points_yet') }}</p>
           </div>
 
-          <!-- Orders -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+          <!-- Orders summary -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
+            <div>
               <h2 class="text-lg font-semibold text-gray-900">{{ t('account.orders') }}</h2>
+              <p class="text-sm text-gray-400 mt-0.5">{{ t('account.orders_summary') }}</p>
             </div>
-
-            <div v-if="orders?.data?.length" class="divide-y divide-gray-100">
-              <div v-for="order in orders.data" :key="order.id"
-                class="px-6 py-4 flex items-center justify-between gap-4">
-                <div>
-                  <div class="font-medium text-gray-900 text-sm">{{ order.order_number }}</div>
-                  <div class="text-xs text-gray-400 mt-0.5">{{ order.created_at }}</div>
-                </div>
-                <div class="flex items-center gap-4">
-                  <div class="text-right">
-                    <div class="font-bold text-gray-900 text-sm">{{ formatPrice(order.total) }}</div>
-                    <span class="text-xs px-2 py-0.5 rounded-full font-medium"
-                      :class="{
-                        'bg-yellow-100 text-yellow-800': order.status === 'pending',
-                        'bg-blue-100 text-blue-800': order.status === 'processing',
-                        'bg-green-100 text-green-800': order.status === 'delivered',
-                        'bg-red-100 text-red-800': order.status === 'cancelled',
-                      }">
-                      {{ order.status }}
-                    </span>
-                  </div>
-                  <Link :href="route('account.orders.show', order.id)"
-                    class="text-sm text-indigo-600 hover:text-indigo-800 font-medium shrink-0">
-                    {{ t('account.view') }}
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            <div v-else class="text-center py-12 text-gray-400">
-              <p class="font-medium">{{ t('account.no_orders') }}</p>
-              <Link :href="route('shop')" class="mt-3 inline-block text-sm text-indigo-600 hover:underline">
-                {{ t('account.start_shopping') }}
-              </Link>
-            </div>
-
-            <!-- Pagination -->
-            <div v-if="orders?.last_page > 1" class="px-6 py-4 border-t border-gray-100 flex justify-center gap-2">
-              <a v-for="link in orders.links" :key="link.label" :href="link.url ?? '#'"
-                :class="['px-3 py-1.5 rounded-lg text-sm border', link.active
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300']"
-                v-html="link.label" />
-            </div>
+            <Link :href="route('account.orders')"
+              class="shrink-0 text-sm font-medium text-indigo-600 hover:text-indigo-800">
+              {{ t('account.view_all_orders') }} →
+            </Link>
           </div>
         </div>
       </div>
@@ -145,15 +106,8 @@ import { useI18n } from '@/composables/useI18n'
 const { t } = useI18n()
 const route = window.route
 
-const props = defineProps({ orders: Object, wishlistItems: Array, user: Object, pointsHistory: Array })
+const props = defineProps({ wishlistItems: Array, user: Object, pointsHistory: Array })
 const page = usePage()
-
-function formatPrice(price) {
-  return new Intl.NumberFormat('el-GR', {
-    style: 'currency',
-    currency: page.props.currency ?? 'EUR',
-  }).format(price)
-}
 
 async function removeFromWishlist(productId) {
   await fetch(route('wishlist.toggle'), {

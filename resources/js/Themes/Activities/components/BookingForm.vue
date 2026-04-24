@@ -33,7 +33,7 @@
 
     <template v-else>
       <h3 class="font-bold text-gray-900 text-lg mb-1">{{ t('booking.title') }}</h3>
-      <p v-if="activity.activity_detail?.capacity && !hasSlots" class="text-sm text-gray-500 mb-4">
+      <p v-if="activity.max_participants && !hasSlots" class="text-sm text-gray-500 mb-4">
         {{ spotsLeft }} {{ t('booking.spots_remaining') }}
       </p>
 
@@ -67,12 +67,7 @@
 
         <!-- Open date picker or fixed date (non-slot mode) -->
         <template v-else>
-          <div v-if="activity.activity_detail?.event_date">
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('booking.date') }}</label>
-            <div class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700">
-              {{ formatDate(activity.activity_detail.event_date) }}
-            </div>
-          </div>
+          <div v-if="false"><!-- no fixed event_date on Activity model --></div>
           <div v-else>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('booking.select_date') }}</label>
             <input type="date" v-model="form.booking_date" :min="minBookingDate" required
@@ -136,11 +131,11 @@ const selectedSlot = computed(() => props.availableSlots.find(s => s.id === form
 
 const maxQty = computed(() => {
   if (selectedSlot.value) return selectedSlot.value.spots_remaining
-  return props.spotsRemaining ?? props.activity.activity_detail?.capacity ?? 99
+  return props.spotsRemaining ?? props.activity.max_participants ?? 99
 })
 
-const spotsLeft = computed(() => props.spotsRemaining ?? props.activity.activity_detail?.capacity ?? '∞')
-const cutoffHours = computed(() => props.activity.activity_detail?.booking_cutoff_hours ?? 0)
+const spotsLeft = computed(() => props.spotsRemaining ?? props.activity.max_participants ?? '∞')
+const cutoffHours = computed(() => props.activity.booking_cutoff_hours ?? 0)
 
 const minBookingDate = computed(() => {
   if (!cutoffHours.value) return today
@@ -149,13 +144,7 @@ const minBookingDate = computed(() => {
   return d.toISOString().split('T')[0]
 })
 
-const bookingClosed = computed(() => {
-  const detail = props.activity.activity_detail
-  if (!detail?.event_date || !cutoffHours.value) return false
-  const cutoff = new Date(detail.event_date)
-  cutoff.setHours(cutoff.getHours() - cutoffHours.value)
-  return new Date() > cutoff
-})
+const bookingClosed = computed(() => false)
 
 const submitDisabled = computed(() => {
   if (hasSlots.value) return !form.slot_id
@@ -163,10 +152,11 @@ const submitDisabled = computed(() => {
 })
 
 const form = reactive({
-  product_id:   props.activity.id,
-  quantity:     1,
-  booking_date: props.activity.activity_detail?.event_date ?? '',
-  slot_id:      null,
+  bookable_type: 'activity',
+  bookable_id:   props.activity.id,
+  quantity:      1,
+  booking_date:  '',
+  slot_id:       null,
 })
 
 const submitting = ref(false)
@@ -209,7 +199,7 @@ async function submitAlert() {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
       },
-      body: JSON.stringify({ product_id: props.activity.id, email: alertEmail.value }),
+      body: JSON.stringify({ bookable_type: 'activity', bookable_id: props.activity.id, email: alertEmail.value }),
     })
     alertSent.value = true
   } finally {

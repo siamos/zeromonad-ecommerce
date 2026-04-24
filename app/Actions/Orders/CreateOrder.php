@@ -3,12 +3,17 @@
 namespace App\Actions\Orders;
 
 use App\Actions\Cart\ClearCart;
+use App\Actions\Payments\ProcessPayment;
 use App\Http\Requests\CheckoutRequest;
 use App\Mail\OrderConfirmation;
 use App\Models\ActivitySlot;
 use App\Models\Cart;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\PaymentGateways\PaymentGatewayManager;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -22,7 +27,7 @@ class CreateOrder
     public function handle(Cart $cart, string $paymentMethod, array $billingAddress, array $shippingAddress = [], int $usePoints = 0): Order
     {
         return DB::transaction(function () use ($cart, $paymentMethod, $billingAddress, $shippingAddress, $usePoints) {
-            $subtotal = $cart->subtotal();
+            $subtotal = $cart->subtotal;
             $discount = $cart->coupon?->calculateDiscount($subtotal) ?? 0;
 
             $user = $cart->user_id ? User::find($cart->user_id) : null;
@@ -47,11 +52,15 @@ class CreateOrder
                 'shipping_address' => $shippingAddress ?: $billingAddress,
             ]);
 
-            foreach ($cart->items()->with('product')->get() as $item) {
+            foreach ($cart->items()->with(['product', 'cartable'])->get() as $item) {
+                $bookable = $item->cartable ?? $item->product;
+
                 $order->items()->create([
                     'product_id' => $item->product_id,
-                    'product_name' => $item->product->name,
-                    'product_sku' => $item->product->sku,
+                    'orderable_type' => $item->cartable_type,
+                    'orderable_id' => $item->cartable_id,
+                    'product_name' => $this->resolveItemName($bookable),
+                    'product_sku' => $bookable instanceof Product ? $bookable->sku : null,
                     'unit_price' => $item->unit_price,
                     'quantity' => $item->quantity,
                     'subtotal' => $item->lineTotal(),
@@ -86,11 +95,32 @@ class CreateOrder
         });
     }
 
+    private function resolveItemName(?Model $bookable): string
+    {
+        if (! $bookable) {
+            return '';
+        }
+
+        if ($bookable instanceof Vehicle) {
+            return "{$bookable->make} {$bookable->model} {$bookable->year}";
+        }
+
+        if ($bookable instanceof Product) {
+            $name = $bookable->name;
+
+            return is_array($name) ? ($name['en'] ?? '') : (string) $name;
+        }
+
+        $title = $bookable->title ?? '';
+
+        return is_array($title) ? ($title['en'] ?? '') : (string) $title;
+    }
+
     public function asController(CheckoutRequest $request): RedirectResponse
     {
         $cart = auth()->check()
-            ? Cart::where('user_id', auth()->id())->with(['items.product', 'coupon'])->firstOrFail()
-            : Cart::where('session_id', $request->session()->getId())->with(['items.product', 'coupon'])->firstOrFail();
+            ? Cart::where('user_id', auth()->id())->with(['items.product', 'items.cartable', 'coupon'])->firstOrFail()
+            : Cart::where('session_id', $request->session()->getId())->with(['items.product', 'items.cartable', 'coupon'])->firstOrFail();
 
         if ($cart->items->isEmpty()) {
             return back()->with('error', 'Your cart is empty.');
@@ -109,6 +139,14 @@ class CreateOrder
         }
 
         Mail::send(new OrderConfirmation($order));
+
+        $gateway = app(PaymentGatewayManager::class)->resolve($order->payment_method);
+
+        if (! $gateway->requiresRedirect()) {
+            ProcessPayment::run($order);
+
+            return redirect()->route('checkout.success', $order);
+        }
 
         return redirect()->route('checkout.callback', $order->payment_method)
             ->with('order_id', $order->id);

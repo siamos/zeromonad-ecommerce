@@ -11,18 +11,38 @@ class SubmitReview
 {
     use AsAction;
 
-    public function handle(int $productId, int $userId, int $rating, string $body, ?string $title = null): Review
+    public function handle(string $reviewableType, int $reviewableId, int $userId, int $rating, string $body, ?string $title = null): Review
     {
+        $data = [
+            'rating' => $rating,
+            'title' => $title,
+            'body' => $body,
+            'status' => 'pending',
+        ];
+
+        if ($reviewableType === 'product') {
+            $data['product_id'] = $reviewableId;
+        }
+
         return Review::updateOrCreate(
-            ['product_id' => $productId, 'user_id' => $userId],
-            ['rating' => $rating, 'title' => $title, 'body' => $body, 'status' => 'pending'],
+            ['reviewable_type' => $reviewableType, 'reviewable_id' => $reviewableId, 'user_id' => $userId],
+            $data,
         );
     }
 
     public function asController(ReviewRequest $request): RedirectResponse
     {
+        if ($request->reviewable_type && $request->reviewable_id) {
+            $reviewableType = $request->reviewable_type;
+            $reviewableId = $request->integer('reviewable_id');
+        } else {
+            $reviewableType = 'product';
+            $reviewableId = $request->integer('product_id');
+        }
+
         $this->handle(
-            productId: $request->integer('product_id'),
+            reviewableType: $reviewableType,
+            reviewableId: $reviewableId,
             userId: $request->user()->id,
             rating: $request->integer('rating'),
             body: $request->string('body'),

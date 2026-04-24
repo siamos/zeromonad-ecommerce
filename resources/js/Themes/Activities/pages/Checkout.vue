@@ -34,39 +34,34 @@
             <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6">
               <h2 class="font-bold text-gray-900 mb-5">{{ t('checkout.billing_details') }}</h2>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.first_name') }}</label>
-                  <input v-model="form.first_name" type="text" required
-                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.last_name') }}</label>
-                  <input v-model="form.last_name" type="text" required
-                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-                </div>
                 <div class="sm:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.full_name') }}</label>
+                  <input v-model="form.billing_address.name" type="text" required
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                </div>
+                <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.email') }}</label>
-                  <input v-model="form.email" type="email" required
+                  <input v-model="form.billing_address.email" type="email" required
                     class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                 </div>
-                <div class="sm:col-span-2">
+                <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.phone') }}</label>
-                  <input v-model="form.phone" type="tel"
+                  <input v-model="form.billing_address.phone" type="tel" required
                     class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                 </div>
                 <div class="sm:col-span-2">
                   <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.address') }}</label>
-                  <input v-model="form.address" type="text"
+                  <input v-model="form.billing_address.line1" type="text" required
                     class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.city') }}</label>
-                  <input v-model="form.city" type="text"
+                  <input v-model="form.billing_address.city" type="text" required
                     class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.postcode') }}</label>
-                  <input v-model="form.postcode" type="text"
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('checkout.postal_code') }}</label>
+                  <input v-model="form.billing_address.zip" type="text" required
                     class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                 </div>
               </div>
@@ -196,15 +191,16 @@ const props = defineProps({
 const page = usePage()
 
 const form = reactive({
-  first_name:     props.user?.name?.split(' ')[0] ?? '',
-  last_name:      props.user?.name?.split(' ').slice(1).join(' ') ?? '',
-  email:          props.user?.email ?? '',
-  phone:          '',
-  address:        '',
-  city:           '',
-  postcode:       '',
   payment_method: props.paymentMethods?.[0]?.key ?? '',
-  use_points:     0,
+  billing_address: {
+    name:  props.user?.name ?? '',
+    email: props.user?.email ?? '',
+    phone: '',
+    line1: '',
+    city:  '',
+    zip:   '',
+  },
+  use_points: 0,
 })
 
 const submitting = ref(false)

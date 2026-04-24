@@ -7,6 +7,8 @@ use App\Actions\Coupons\ApplyCoupon;
 use App\Actions\Orders\CreateOrder;
 use App\Actions\Payments\VerifyPayment;
 use App\Actions\Reviews\SubmitReview;
+use App\Http\Controllers\AccommodationController;
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
@@ -15,17 +17,57 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StockAlertController;
+use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\WishlistController;
+use App\Models\Accommodation;
+use App\Models\Activity;
+use App\Models\Product;
+use App\Models\Vehicle;
+use App\Settings\GeneralSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Sitemap & robots
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 
-// Public routes
-Route::get('/', [ProductController::class, 'home'])->name('home');
-Route::get('/shop', [ProductController::class, 'index'])->name('shop');
-Route::get('/shop/{product:slug}', [ProductController::class, 'show'])->name('product.show');
+$theme = fn () => app(GeneralSettings::class)->active_theme;
+
+// Public routes — theme-aware dispatch
+Route::get('/', function () use ($theme) {
+    return match ($theme()) {
+        'Activities' => app(ActivityController::class)->home(),
+        'Bookings' => app(AccommodationController::class)->home(),
+        'Cars' => app(VehicleController::class)->home(),
+        default => app(ProductController::class)->home(),
+    };
+})->name('home');
+
+Route::get('/shop', function (Request $request) use ($theme) {
+    return match ($theme()) {
+        'Activities' => app(ActivityController::class)->index($request),
+        'Bookings' => app(AccommodationController::class)->index($request),
+        'Cars' => app(VehicleController::class)->index($request),
+        default => app(ProductController::class)->index($request),
+    };
+})->name('shop');
+
+Route::get('/shop/{slug}', function (string $slug) use ($theme) {
+    return match ($theme()) {
+        'Activities' => app(ActivityController::class)->show(
+            Activity::where('slug', $slug)->firstOrFail()
+        ),
+        'Bookings' => app(AccommodationController::class)->show(
+            Accommodation::where('slug', $slug)->firstOrFail()
+        ),
+        'Cars' => app(VehicleController::class)->show(
+            Vehicle::where('slug', $slug)->firstOrFail()
+        ),
+        default => app(ProductController::class)->show(
+            Product::where('slug', $slug)->firstOrFail()
+        ),
+    };
+})->name('product.show');
+
 Route::get('/search', SearchController::class)->name('search');
 
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
@@ -51,7 +93,7 @@ Route::prefix('checkout')->name('checkout.')->group(function () {
 // Account
 Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
     Route::get('/', [OrderController::class, 'index'])->name('index');
-    Route::get('/orders', [OrderController::class, 'index'])->name('orders');
+    Route::get('/orders', [OrderController::class, 'orders'])->name('orders');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 });
 

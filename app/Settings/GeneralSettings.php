@@ -27,6 +27,16 @@ class GeneralSettings extends Settings
 
     public ?string $hero_image;
 
+    public int $free_shipping_threshold;
+
+    public ?string $products_palette;
+
+    public ?string $activities_palette;
+
+    public ?string $bookings_palette;
+
+    public ?string $cars_palette;
+
     public static function group(): string
     {
         return 'general';
@@ -45,6 +55,11 @@ class GeneralSettings extends Settings
             'hero_title' => null,
             'hero_subtitle' => null,
             'hero_image' => null,
+            'free_shipping_threshold' => 50,
+            'products_palette' => 'indigo',
+            'activities_palette' => 'emerald',
+            'bookings_palette' => 'amber',
+            'cars_palette' => 'slate',
         ];
     }
 

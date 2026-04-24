@@ -64,15 +64,13 @@
           </div>
 
           <!-- Coupon -->
-          <form @submit.prevent="applyCoupon" class="mt-6">
-            <div class="flex gap-2">
-              <input v-model="couponCode" type="text" :placeholder="t('cart.coupon_placeholder')"
-                class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-              <button type="submit"
-                class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors cursor-pointer">
-                {{ t('cart.coupon_apply') }}
-              </button>
-            </div>
+          <form @submit.prevent="applyCoupon" class="mt-6 flex flex-col gap-2 sm:flex-row">
+            <input v-model="couponCode" type="text" :placeholder="t('cart.coupon_placeholder')"
+              class="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            <button type="submit"
+              class="w-full sm:w-auto whitespace-nowrap bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors cursor-pointer">
+              {{ t('cart.coupon_apply') }}
+            </button>
           </form>
 
           <Link :href="route('checkout.index')"

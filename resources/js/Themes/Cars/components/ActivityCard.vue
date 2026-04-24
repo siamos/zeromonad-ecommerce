@@ -9,7 +9,7 @@
         />
         <!-- Price per day badge -->
         <div class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 text-sm font-bold text-gray-800">
-          {{ formatPrice(activity.price) }}<span class="text-xs font-normal text-gray-500"> {{ t('activity.per_day') }}</span>
+          {{ formatPrice(activity.price_per_day ?? activity.price) }}<span class="text-xs font-normal text-gray-500"> {{ t('activity.per_day') }}</span>
         </div>
         <span v-if="isNew" class="absolute bottom-3 left-3 bg-slate-700 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ t('card.new') }}</span>
         <div class="absolute top-3 right-3 flex items-center gap-2">
@@ -44,26 +44,26 @@
       </div>
       <p class="text-sm text-gray-500 line-clamp-2 mb-4">{{ activity.short_description }}</p>
 
-      <div v-if="activity.activity_detail" class="flex items-center gap-4 text-sm text-gray-500 mb-4">
-        <span v-if="activity.activity_detail.extra_attributes?.transmission" class="flex items-center gap-1">
+      <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
+        <span v-if="activity.transmission" class="flex items-center gap-1 capitalize">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
           </svg>
-          {{ activity.activity_detail.extra_attributes.transmission }}
+          {{ activity.transmission }}
         </span>
-        <span v-if="activity.activity_detail.extra_attributes?.seats" class="flex items-center gap-1">
+        <span v-if="activity.seats" class="flex items-center gap-1">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
           </svg>
-          {{ activity.activity_detail.extra_attributes.seats }} seats
+          {{ activity.seats }} seats
         </span>
-        <span v-if="activity.activity_detail.location" class="flex items-center gap-1">
+        <span v-if="activity.pickup_location" class="flex items-center gap-1">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
           </svg>
-          {{ activity.activity_detail.location }}
+          {{ activity.pickup_location }}
         </span>
       </div>
 
@@ -88,7 +88,7 @@ const props = defineProps({ activity: Object })
 const page = usePage()
 const { t } = useI18n()
 const route = window.route
-const { isWishlisted, loading, toggle } = useWishlist(props.activity.id)
+const { isWishlisted, loading, toggle } = useWishlist(props.activity.id, 'vehicle')
 
 const isNew = computed(() => {
   if (!props.activity.created_at) { return false }
@@ -96,7 +96,7 @@ const isNew = computed(() => {
 })
 
 const vehicleType = computed(() =>
-  props.activity.activity_detail?.extra_attributes?.vehicle_type ?? 'Vehicle'
+  props.activity.vehicle_type ?? 'Vehicle'
 )
 
 function formatPrice(price) {

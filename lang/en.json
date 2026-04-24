@@ -178,6 +178,8 @@
   "account.email": "Email",
   "account.no_orders": "No orders yet",
   "account.start_shopping": "Start shopping →",
+  "account.orders_summary": "View and manage all your orders",
+  "account.view_all_orders": "View all orders",
   "account.sign_out_long": "Sign Out",
   "account.view": "View",
   "account.wishlist": "My Wishlist",

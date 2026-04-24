@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-stone-50">
+  <div class="min-h-screen flex flex-col bg-stone-50" :class="'palette-' + ($page.props.theme_palette ?? 'emerald')">
     <!-- Navigation -->
     <nav class="bg-white shadow-sm border-b border-stone-200">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -126,7 +126,7 @@
       </div>
     </div>
 
-    <main>
+    <main class="grow">
       <slot />
     </main>
 
@@ -168,6 +168,7 @@
     </footer>
   </div>
   <CartSuccessModal />
+  <PromotionPopup />
 </template>
 
 <script setup>
@@ -175,6 +176,7 @@ import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useI18n } from '@/composables/useI18n'
 import CartSuccessModal from '@/components/CartSuccessModal.vue'
+import PromotionPopup from '@/components/PromotionPopup.vue'
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue'
 
 const { t } = useI18n()

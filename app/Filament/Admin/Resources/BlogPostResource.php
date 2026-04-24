@@ -26,6 +26,11 @@ class BlogPostResource extends Resource
         return 'heroicon-o-document-text';
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Marketing';
+    }
+
     protected static ?int $navigationSort = 60;
 
     public static function form(Schema $schema): Schema

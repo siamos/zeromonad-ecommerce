@@ -12,3 +12,28 @@
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+@layer base {
+  .palette-indigo  { --pal-50: var(--color-indigo-50);  --pal-100: var(--color-indigo-100);  --pal-500: var(--color-indigo-500);  --pal-600: var(--color-indigo-600);  --pal-700: var(--color-indigo-700); }
+  .palette-violet  { --pal-50: var(--color-violet-50);  --pal-100: var(--color-violet-100);  --pal-500: var(--color-violet-500);  --pal-600: var(--color-violet-600);  --pal-700: var(--color-violet-700); }
+  .palette-blue    { --pal-50: var(--color-blue-50);    --pal-100: var(--color-blue-100);    --pal-500: var(--color-blue-500);    --pal-600: var(--color-blue-600);    --pal-700: var(--color-blue-700); }
+  .palette-emerald { --pal-50: var(--color-emerald-50); --pal-100: var(--color-emerald-100); --pal-500: var(--color-emerald-500); --pal-600: var(--color-emerald-600); --pal-700: var(--color-emerald-700); }
+  .palette-teal    { --pal-50: var(--color-teal-50);    --pal-100: var(--color-teal-100);    --pal-500: var(--color-teal-500);    --pal-600: var(--color-teal-600);    --pal-700: var(--color-teal-700); }
+  .palette-cyan    { --pal-50: var(--color-cyan-50);    --pal-100: var(--color-cyan-100);    --pal-500: var(--color-cyan-500);    --pal-600: var(--color-cyan-600);    --pal-700: var(--color-cyan-700); }
+  .palette-green   { --pal-50: var(--color-green-50);   --pal-100: var(--color-green-100);   --pal-500: var(--color-green-500);   --pal-600: var(--color-green-600);   --pal-700: var(--color-green-700); }
+  .palette-amber   { --pal-50: var(--color-amber-50);   --pal-100: var(--color-amber-100);   --pal-500: var(--color-amber-500);   --pal-600: var(--color-amber-600);   --pal-700: var(--color-amber-700); }
+  .palette-orange  { --pal-50: var(--color-orange-50);  --pal-100: var(--color-orange-100);  --pal-500: var(--color-orange-500);  --pal-600: var(--color-orange-600);  --pal-700: var(--color-orange-700); }
+  .palette-rose    { --pal-50: var(--color-rose-50);    --pal-100: var(--color-rose-100);    --pal-500: var(--color-rose-500);    --pal-600: var(--color-rose-600);    --pal-700: var(--color-rose-700); }
+  .palette-pink    { --pal-50: var(--color-pink-50);    --pal-100: var(--color-pink-100);    --pal-500: var(--color-pink-500);    --pal-600: var(--color-pink-600);    --pal-700: var(--color-pink-700); }
+  .palette-slate   { --pal-50: var(--color-slate-50);   --pal-100: var(--color-slate-100);   --pal-500: var(--color-slate-500);   --pal-600: var(--color-slate-600);   --pal-700: var(--color-slate-700); }
+  .palette-zinc    { --pal-50: var(--color-zinc-50);    --pal-100: var(--color-zinc-100);    --pal-500: var(--color-zinc-500);    --pal-600: var(--color-zinc-600);    --pal-700: var(--color-zinc-700); }
+  .palette-stone   { --pal-50: var(--color-stone-50);   --pal-100: var(--color-stone-100);   --pal-500: var(--color-stone-500);   --pal-600: var(--color-stone-600);   --pal-700: var(--color-stone-700); }
+  .palette-neutral { --pal-50: var(--color-neutral-50); --pal-100: var(--color-neutral-100); --pal-500: var(--color-neutral-500); --pal-600: var(--color-neutral-600); --pal-700: var(--color-neutral-700); }
+  .palette-red     { --pal-50: var(--color-red-50);     --pal-100: var(--color-red-100);     --pal-500: var(--color-red-500);     --pal-600: var(--color-red-600);     --pal-700: var(--color-red-700); }
+  .palette-purple  { --pal-50: var(--color-purple-50);  --pal-100: var(--color-purple-100);  --pal-500: var(--color-purple-500);  --pal-600: var(--color-purple-600);  --pal-700: var(--color-purple-700); }
+  .palette-fuchsia { --pal-50: var(--color-fuchsia-50); --pal-100: var(--color-fuchsia-100); --pal-500: var(--color-fuchsia-500); --pal-600: var(--color-fuchsia-600); --pal-700: var(--color-fuchsia-700); }
+  .palette-sky     { --pal-50: var(--color-sky-50);     --pal-100: var(--color-sky-100);     --pal-500: var(--color-sky-500);     --pal-600: var(--color-sky-600);     --pal-700: var(--color-sky-700); }
+  .palette-lime    { --pal-50: var(--color-lime-50);    --pal-100: var(--color-lime-100);    --pal-500: var(--color-lime-500);    --pal-600: var(--color-lime-600);    --pal-700: var(--color-lime-700); }
+  .palette-yellow  { --pal-50: var(--color-yellow-50);  --pal-100: var(--color-yellow-100);  --pal-500: var(--color-yellow-500);  --pal-600: var(--color-yellow-600);  --pal-700: var(--color-yellow-700); }
+  .palette-gray    { --pal-50: var(--color-gray-50);    --pal-100: var(--color-gray-100);    --pal-500: var(--color-gray-500);    --pal-600: var(--color-gray-600);    --pal-700: var(--color-gray-700); }
+}

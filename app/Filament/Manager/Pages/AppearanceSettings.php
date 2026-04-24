@@ -5,6 +5,7 @@ namespace App\Filament\Manager\Pages;
 use App\Settings\GeneralSettings;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -46,12 +47,14 @@ class AppearanceSettings extends Page implements HasForms
     public function mount(): void
     {
         $settings = app(GeneralSettings::class);
+        $paletteKey = strtolower($settings->active_theme).'_palette';
 
         $this->form->fill([
             'site_logo' => $settings->site_logo ? [$settings->site_logo] : [],
             'hero_image' => $settings->hero_image ? [$settings->hero_image] : [],
             'hero_title' => $settings->hero_title,
             'hero_subtitle' => $settings->hero_subtitle,
+            'active_palette' => $settings->{$paletteKey},
         ]);
     }
 
@@ -100,6 +103,37 @@ class AppearanceSettings extends Page implements HasForms
                             ->columnSpanFull(),
                     ])->columns(1),
 
+                Section::make('Theme Color Palette')
+                    ->description('Choose the color palette for the active theme.')
+                    ->schema([
+                        Select::make('active_palette')
+                            ->label('Color Palette')
+                            ->options(fn () => match (app(GeneralSettings::class)->active_theme) {
+                                'Activities' => [
+                                    'emerald' => 'Emerald', 'teal' => 'Teal', 'cyan' => 'Cyan', 'green' => 'Green',
+                                    'lime' => 'Lime', 'sky' => 'Sky', 'blue' => 'Blue', 'purple' => 'Purple',
+                                    'amber' => 'Amber', 'orange' => 'Orange',
+                                ],
+                                'Bookings' => [
+                                    'amber' => 'Amber', 'orange' => 'Orange', 'rose' => 'Rose', 'pink' => 'Pink',
+                                    'red' => 'Red', 'fuchsia' => 'Fuchsia', 'purple' => 'Purple', 'violet' => 'Violet',
+                                    'yellow' => 'Yellow', 'indigo' => 'Indigo',
+                                ],
+                                'Cars' => [
+                                    'slate' => 'Slate', 'zinc' => 'Zinc', 'stone' => 'Stone', 'neutral' => 'Neutral',
+                                    'gray' => 'Gray', 'blue' => 'Blue', 'indigo' => 'Indigo', 'teal' => 'Teal',
+                                    'sky' => 'Sky', 'emerald' => 'Emerald',
+                                ],
+                                default => [
+                                    'indigo' => 'Indigo', 'violet' => 'Violet', 'blue' => 'Blue', 'purple' => 'Purple',
+                                    'emerald' => 'Emerald', 'teal' => 'Teal', 'cyan' => 'Cyan', 'sky' => 'Sky',
+                                    'rose' => 'Rose', 'pink' => 'Pink', 'fuchsia' => 'Fuchsia', 'orange' => 'Orange',
+                                    'amber' => 'Amber', 'lime' => 'Lime', 'green' => 'Green',
+                                ],
+                            })
+                            ->required(),
+                    ]),
+
                 Actions::make($this->getFormActions()),
             ])
             ->statePath('data');
@@ -114,6 +148,10 @@ class AppearanceSettings extends Page implements HasForms
         $settings->hero_image = $data['hero_image'][0] ?? null;
         $settings->hero_title = $data['hero_title'] ?: null;
         $settings->hero_subtitle = $data['hero_subtitle'] ?: null;
+
+        $paletteKey = strtolower($settings->active_theme).'_palette';
+        $settings->{$paletteKey} = $data['active_palette'];
+
         $settings->save();
 
         Notification::make()->title('Appearance saved')->success()->send();

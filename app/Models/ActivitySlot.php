@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ActivitySlot extends Model
 {
     protected $fillable = [
+        'activity_id',
         'product_id',
         'date',
         'capacity',
@@ -26,6 +27,11 @@ class ActivitySlot extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function activity(): BelongsTo
+    {
+        return $this->belongsTo(Activity::class);
     }
 
     public function spotsRemaining(): int

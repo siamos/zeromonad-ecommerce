@@ -4,10 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Wishlist extends Model
 {
-    protected $fillable = ['user_id', 'product_id'];
+    protected $fillable = [
+        'user_id',
+        'product_id',
+        'wishable_type',
+        'wishable_id',
+    ];
 
     public function user(): BelongsTo
     {
@@ -17,5 +23,10 @@ class Wishlist extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function wishable(): MorphTo
+    {
+        return $this->morphTo();
     }
 }

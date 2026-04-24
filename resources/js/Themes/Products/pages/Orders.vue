@@ -1,0 +1,104 @@
+<template>
+  <Layout>
+    <Head :title="t('account.orders')" />
+    <div class="max-w-4xl mx-auto px-4 py-10">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">{{ t('account.title') }}</h1>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Sidebar -->
+        <nav class="space-y-1">
+          <Link :href="route('account.index')"
+            class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            {{ t('account.overview') }}
+          </Link>
+          <Link :href="route('account.orders')"
+            class="block px-4 py-2 rounded-lg text-sm font-medium text-indigo-600 bg-indigo-50">
+            {{ t('account.orders') }}
+          </Link>
+          <Link :href="route('logout')" method="post" as="button"
+            class="block w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
+            {{ t('account.sign_out_long') }}
+          </Link>
+        </nav>
+
+        <!-- Orders list -->
+        <div class="lg:col-span-3">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="p-6 border-b border-gray-100">
+              <h2 class="text-lg font-semibold text-gray-900">{{ t('account.orders') }}</h2>
+            </div>
+
+            <div v-if="orders?.data?.length" class="divide-y divide-gray-100">
+              <div v-for="order in orders.data" :key="order.id"
+                class="px-6 py-4 flex items-center justify-between gap-4">
+                <div>
+                  <div class="font-medium text-gray-900 text-sm">{{ order.order_number }}</div>
+                  <div class="text-xs text-gray-400 mt-0.5">{{ formatDate(order.created_at) }}</div>
+                </div>
+                <div class="flex items-center gap-4">
+                  <div class="text-right">
+                    <div class="font-bold text-gray-900 text-sm">{{ formatPrice(order.total) }}</div>
+                    <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                      :class="{
+                        'bg-yellow-100 text-yellow-800': order.status === 'pending',
+                        'bg-blue-100 text-blue-800': order.status === 'processing',
+                        'bg-green-100 text-green-800': order.status === 'delivered',
+                        'bg-red-100 text-red-800': order.status === 'cancelled',
+                      }">
+                      {{ order.status }}
+                    </span>
+                  </div>
+                  <Link :href="route('account.orders.show', order.id)"
+                    class="text-sm text-indigo-600 hover:text-indigo-800 font-medium shrink-0">
+                    {{ t('account.view') }}
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="text-center py-12 text-gray-400">
+              <p class="font-medium">{{ t('account.no_orders') }}</p>
+              <Link :href="route('shop')" class="mt-3 inline-block text-sm text-indigo-600 hover:underline">
+                {{ t('account.start_shopping') }}
+              </Link>
+            </div>
+
+            <div v-if="orders?.last_page > 1" class="px-6 py-4 border-t border-gray-100 flex justify-center gap-2">
+              <a v-for="link in orders.links" :key="link.label" :href="link.url ?? '#'"
+                :class="['px-3 py-1.5 rounded-lg text-sm border', link.active
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300']"
+                v-html="link.label" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Layout>
+</template>
+
+<script setup>
+import { Head, Link, usePage } from '@inertiajs/vue3'
+import Layout from '../Layout.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
+const route = window.route
+defineProps({ user: Object, orders: Object })
+const page = usePage()
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  return new Intl.DateTimeFormat(page.props.locale === 'el' ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  }).format(new Date(dateStr))
+}
+
+function formatPrice(price) {
+  return new Intl.NumberFormat('el-GR', {
+    style: 'currency',
+    currency: page.props.currency ?? 'EUR',
+  }).format(price)
+}
+</script>

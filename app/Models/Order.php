@@ -12,6 +12,8 @@ class Order extends Model
 {
     use LogsActivity;
 
+    public ?string $_previousStatus = null;
+
     protected $fillable = [
         'user_id',
         'guest_token',

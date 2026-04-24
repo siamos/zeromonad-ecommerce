@@ -28,9 +28,9 @@
       <p class="text-gray-500 mb-8">{{ t('home.featured_subtitle') }}</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <ActivityCard
-          v-for="activity in featuredActivities"
-          :key="activity.id"
-          :activity="activity"
+          v-for="accommodation in featuredAccommodations"
+          :key="accommodation.id"
+          :activity="accommodation"
         />
       </div>
     </section>
@@ -64,7 +64,7 @@ import { useI18n } from '@/composables/useI18n'
 const { t } = useI18n()
 
 defineProps({
-  featuredActivities: Array,
+  featuredAccommodations: Array,
   categories: Array,
 })
 </script>

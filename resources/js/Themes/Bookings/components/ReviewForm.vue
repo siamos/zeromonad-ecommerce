@@ -11,7 +11,8 @@
     </div>
 
     <form v-else @submit.prevent="submit" class="space-y-4">
-      <input type="hidden" :value="productId" name="product_id" />
+      <input type="hidden" :value="reviewableType ?? 'product'" name="reviewable_type" />
+      <input type="hidden" :value="reviewableId ?? productId" name="reviewable_id" />
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('review.rating') }}</label>
@@ -52,13 +53,24 @@ import { useI18n } from '@/composables/useI18n'
 const { t } = useI18n()
 const route = window.route
 
-const props = defineProps({ productId: Number })
+const props = defineProps({
+  productId: { type: Number, default: null },
+  reviewableType: { type: String, default: null },
+  reviewableId: { type: Number, default: null },
+})
 const form = reactive({ rating: 0, title: '', body: '' })
 const submitting = ref(false)
 
 function submit() {
   submitting.value = true
-  router.post(route('reviews.store'), { product_id: props.productId, ...form }, {
+  const payload = { ...form }
+  if (props.reviewableType) {
+    payload.reviewable_type = props.reviewableType
+    payload.reviewable_id = props.reviewableId
+  } else {
+    payload.product_id = props.productId
+  }
+  router.post(route('reviews.store'), payload, {
     preserveScroll: true,
     onSuccess: () => { form.rating = 0; form.title = ''; form.body = '' },
     onFinish: () => { submitting.value = false },

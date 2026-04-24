@@ -9,7 +9,7 @@
         />
         <!-- Price per night badge -->
         <div class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 text-sm font-bold text-gray-800">
-          {{ formatPrice(activity.price) }}<span class="text-xs font-normal text-gray-500"> {{ t('activity.per_night') }}</span>
+          {{ formatPrice(activity.price_per_night ?? activity.price) }}<span class="text-xs font-normal text-gray-500"> {{ t('activity.per_night') }}</span>
         </div>
         <span v-if="isNew" class="absolute bottom-3 left-3 bg-amber-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ t('card.new') }}</span>
         <div class="absolute top-3 right-3 flex items-center gap-2">
@@ -44,31 +44,31 @@
       </div>
       <p class="text-sm text-gray-500 line-clamp-2 mb-4">{{ activity.short_description }}</p>
 
-      <div v-if="activity.activity_detail" class="flex items-center gap-4 text-sm text-gray-500 mb-4">
-        <span v-if="activity.activity_detail.location" class="flex items-center gap-1">
+      <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
+        <span v-if="activity.location" class="flex items-center gap-1">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
           </svg>
-          {{ activity.activity_detail.location }}
+          {{ activity.location }}
         </span>
-        <span v-if="activity.activity_detail.extra_attributes?.bedrooms" class="flex items-center gap-1">
+        <span v-if="activity.bedrooms" class="flex items-center gap-1">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
-          {{ activity.activity_detail.extra_attributes.bedrooms }} bed
+          {{ activity.bedrooms }} bed
         </span>
-        <span v-if="activity.activity_detail.extra_attributes?.bathrooms" class="flex items-center gap-1">
+        <span v-if="activity.bathrooms" class="flex items-center gap-1">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
           </svg>
-          {{ activity.activity_detail.extra_attributes.bathrooms }} bath
+          {{ activity.bathrooms }} bath
         </span>
       </div>
 
       <div class="flex items-center justify-between">
         <span class="text-sm text-gray-500">
-          {{ activity.activity_detail?.capacity ? activity.activity_detail.capacity + ' ' + t('activity.spots') : '' }}
+          {{ activity.max_guests ? activity.max_guests + ' ' + t('activity.spots') : '' }}
         </span>
         <Link :href="route('product.show', activity.slug)"
           class="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors">
@@ -89,7 +89,7 @@ const props = defineProps({ activity: Object })
 const page = usePage()
 const { t } = useI18n()
 const route = window.route
-const { isWishlisted, loading, toggle } = useWishlist(props.activity.id)
+const { isWishlisted, loading, toggle } = useWishlist(props.activity.id, 'accommodation')
 
 const isNew = computed(() => {
   if (!props.activity.created_at) { return false }

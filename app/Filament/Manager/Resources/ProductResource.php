@@ -29,6 +29,16 @@ class ProductResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return app(GeneralSettings::class)->active_theme === 'Products';
+    }
+
+    public static function canAccess(): bool
+    {
+        return app(GeneralSettings::class)->active_theme === 'Products';
+    }
+
     public static function canCreate(): bool
     {
         return true;
@@ -58,7 +68,7 @@ class ProductResource extends Resource
                     ->visible($isCreate),
                 Forms\Components\TextInput::make('sku')
                     ->disabled(! $isCreate)
-                    ->dehydrated(! $isCreate ? false : null),
+                    ->dehydrated($isCreate),
                 Forms\Components\TextInput::make('price')->numeric()->prefix('€')->required(),
                 Forms\Components\TextInput::make('stock')->numeric()->required(),
                 Forms\Components\Select::make('status')
@@ -104,12 +114,15 @@ class ProductResource extends Resource
                     ->searchable(query: fn ($query, $search) => $query
                         ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name, '$.en')) LIKE ?", ["%{$search}%"])
                         ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name, '$.el')) LIKE ?", ["%{$search}%"])
+                        ->orWhere('sku', 'like', "%{$search}%")
                     )
                     ->limit(40),
-                Tables\Columns\TextColumn::make('sku')->toggleable(),
+                Tables\Columns\TextColumn::make('sku')->toggleable()->copyable(),
+                Tables\Columns\TextColumn::make('category.name')->badge()->toggleable(),
                 Tables\Columns\TextColumn::make('price')->money('EUR')->sortable(),
                 Tables\Columns\TextColumn::make('stock')->sortable()
                     ->color(fn ($state) => $state <= app(GeneralSettings::class)->low_stock_threshold ? 'danger' : null),
+                Tables\Columns\IconColumn::make('featured')->boolean()->toggleable(),
                 Tables\Columns\TextColumn::make('status')->badge()
                     ->color(fn ($state) => match ($state) {
                         'draft' => 'warning',
@@ -122,6 +135,23 @@ class ProductResource extends Resource
                 Tables\Filters\SelectFilter::make('status')->options([
                     'draft' => 'Draft', 'published' => 'Published', 'archived' => 'Archived',
                 ]),
+                Tables\Filters\SelectFilter::make('category_id')
+                    ->label('Category')
+                    ->relationship('category', 'name'),
+                Tables\Filters\TernaryFilter::make('featured'),
+                Tables\Filters\Filter::make('price_range')
+                    ->label('Price Range')
+                    ->form([
+                        Forms\Components\TextInput::make('min_price')->label('Min €')->numeric(),
+                        Forms\Components\TextInput::make('max_price')->label('Max €')->numeric(),
+                    ])
+                    ->query(fn ($query, array $data) => $query
+                        ->when($data['min_price'] ?? null, fn ($q, $v) => $q->where('price', '>=', $v))
+                        ->when($data['max_price'] ?? null, fn ($q, $v) => $q->where('price', '<=', $v))
+                    ),
+                Tables\Filters\Filter::make('low_stock')
+                    ->label('Low / Out of Stock')
+                    ->query(fn ($query) => $query->where('stock', '<=', app(GeneralSettings::class)->low_stock_threshold)),
             ])
             ->actions([
                 EditAction::make(),

@@ -11,11 +11,6 @@ class OrderController extends Controller
 {
     public function index(): Response
     {
-        $orders = Order::with('items')
-            ->where('user_id', auth()->id())
-            ->latest()
-            ->paginate(10);
-
         $wishlistItems = Wishlist::with(['product' => fn ($q) => $q->with('media')])
             ->where('user_id', auth()->id())
             ->latest()
@@ -34,9 +29,23 @@ class OrderController extends Controller
 
         return Inertia::render('Account', [
             'user' => $user->only('id', 'name', 'email', 'points_balance'),
-            'orders' => $orders,
             'wishlistItems' => $wishlistItems,
             'pointsHistory' => $pointsHistory,
+        ]);
+    }
+
+    public function orders(): Response
+    {
+        $orders = Order::with('items')
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->paginate(15);
+
+        $user = auth()->user();
+
+        return Inertia::render('Orders', [
+            'user' => $user->only('id', 'name', 'email'),
+            'orders' => $orders,
         ]);
     }
 

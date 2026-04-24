@@ -23,6 +23,11 @@ class OrderResource extends Resource
         return 'heroicon-o-shopping-bag';
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Orders & Customers';
+    }
+
     protected static ?int $navigationSort = 40;
 
     public static function form(Schema $schema): Schema
