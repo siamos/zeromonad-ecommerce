@@ -139,21 +139,26 @@
           <ActivityCard v-for="item in recommended" :key="item.id" :activity="item" />
         </div>
       </div>
+
+      <RecentlyViewed accent-color="text-amber-600" />
     </div>
   </Layout>
 </template>
 
 <script setup>
 import { Head, usePage } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import Layout from '../Layout.vue'
 import BookingForm from '../components/BookingForm.vue'
 import ReviewForm from '../components/ReviewForm.vue'
 import ActivityCard from '../components/ActivityCard.vue'
+import RecentlyViewed from '@/components/RecentlyViewed.vue'
 import { useI18n } from '@/composables/useI18n'
+import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import Breadcrumb from '@/components/Breadcrumb.vue'
 
 const { t } = useI18n()
+const { push: pushRecentlyViewed } = useRecentlyViewed()
 const route = window.route
 const props = defineProps({
   accommodation: Object,
@@ -163,6 +168,10 @@ const props = defineProps({
 })
 const page = usePage()
 const approvedReviews = computed(() => props.accommodation.reviews?.filter(r => r.status === 'approved') ?? [])
+
+onMounted(() => {
+  pushRecentlyViewed({ ...props.accommodation, name: props.accommodation.name ?? props.accommodation.title, price: props.accommodation.price_per_night })
+})
 
 const breadcrumbs = computed(() => {
   const items = [

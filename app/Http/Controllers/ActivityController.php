@@ -71,6 +71,14 @@ class ActivityController extends Controller
                 ->whereColumn('booked_count', '<', 'capacity'));
         }
 
+        if ($request->difficulty) {
+            $query->where('difficulty', $request->difficulty);
+        }
+
+        if ($request->min_age) {
+            $query->where('min_age', '<=', $request->integer('min_age'));
+        }
+
         match ($request->sort) {
             'price_asc' => $query->orderBy('price'),
             'price_desc' => $query->orderByDesc('price'),
@@ -81,7 +89,7 @@ class ActivityController extends Controller
         return Inertia::render('Shop', [
             'activities' => $query->paginate(12)->withQueryString(),
             'categories' => Category::forTheme('Activities')->get(),
-            'filters' => $request->only(['category', 'search', 'location', 'min_price', 'max_price', 'max_duration', 'date', 'sort']),
+            'filters' => $request->only(['category', 'search', 'location', 'min_price', 'max_price', 'max_duration', 'date', 'sort', 'difficulty', 'min_age']),
         ]);
     }
 

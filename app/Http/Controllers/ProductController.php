@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Theme;
 use App\Models\ActivitySlot;
+use App\Models\Bundle;
 use App\Models\Category;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -27,10 +28,19 @@ class ProductController extends Controller
 
         $categories = Category::withCount('products')->get();
 
+        $theme = app(GeneralSettings::class)->theme();
+        $bundles = Bundle::with('items.product')
+            ->active()
+            ->forTheme($theme->value)
+            ->latest()
+            ->take(4)
+            ->get();
+
         return Inertia::render('Home', [
             'featuredActivities' => $featured,
             'featuredProducts' => $featured,
             'categories' => $categories,
+            'bundles' => $bundles,
         ]);
     }
 
@@ -70,11 +80,20 @@ class ProductController extends Controller
             default => $query->orderByDesc('featured')->latest(),
         };
 
+        $theme = app(GeneralSettings::class)->theme();
+        $bundles = Bundle::with('items.product')
+            ->active()
+            ->forTheme($theme->value)
+            ->latest()
+            ->take(4)
+            ->get();
+
         return Inertia::render('Shop', [
             'activities' => $query->paginate(12)->withQueryString(),
             'products' => $query->paginate(12)->withQueryString(),
             'categories' => Category::withCount('products')->get(),
             'filters' => $request->only(['category', 'search', 'max_price', 'date', 'sort']),
+            'bundles' => $bundles,
         ]);
     }
 

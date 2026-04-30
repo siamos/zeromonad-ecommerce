@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Cart;
 use App\Models\Promotion;
+use App\Models\SavedItem;
 use App\Models\Wishlist;
 use App\Settings\GeneralSettings;
 use Illuminate\Http\Request;
@@ -27,6 +28,10 @@ class HandleInertiaRequests extends Middleware
 
         $themePaletteKey = strtolower($activeTheme).'_palette';
         $themePalette = $settings->{$themePaletteKey} ?? null;
+
+        if ($request->has('ref') && ! $request->session()->has('referral_code')) {
+            $request->session()->put('referral_code', $request->query('ref'));
+        }
 
         return array_merge(parent::share($request), [
             'auth' => [
@@ -71,12 +76,38 @@ class HandleInertiaRequests extends Middleware
                     ->values()
                     ->all()
                 : [],
+            'saved_items' => fn () => auth()->check()
+                ? SavedItem::with('saveable')
+                    ->where('user_id', auth()->id())
+                    ->latest()
+                    ->get()
+                    ->map(fn ($item) => [
+                        'id' => $item->id,
+                        'saveable_type' => $item->saveable_type,
+                        'saveable_id' => $item->saveable_id,
+                        'options' => $item->options,
+                        'saveable' => $item->saveable,
+                    ])
+                    ->values()
+                    ->all()
+                : [],
             'active_promotion' => fn () => Promotion::query()
                 ->where('status', 'active')
                 ->where(fn ($q) => $q->whereNull('theme')->orWhere('theme', $activeTheme))
                 ->where(fn ($q) => $q->whereNull('starts_at')->orWhereDate('starts_at', '<=', now()))
                 ->where(fn ($q) => $q->whereNull('ends_at')->orWhereDate('ends_at', '>=', now()))
                 ->first(),
+            'unread_notifications_count' => fn () => auth()->check()
+                ? auth()->user()->unreadNotifications()->count()
+                : 0,
+            'recent_notifications' => fn () => auth()->check()
+                ? auth()->user()->notifications()->latest()->take(10)->get()->map(fn ($n) => [
+                    'id' => $n->id,
+                    'data' => $n->data,
+                    'read_at' => $n->read_at,
+                    'created_at' => $n->created_at,
+                ])->values()->all()
+                : [],
             'locale' => app()->getLocale(),
             'translations' => fn () => json_decode(
                 file_get_contents(

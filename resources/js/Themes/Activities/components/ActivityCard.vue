@@ -72,8 +72,12 @@
         </span>
       </div>
 
+      <SaleCountdown v-if="activity.is_on_sale && activity.sale_ends_at" :ends-at="activity.sale_ends_at" class="mb-3" />
       <div class="flex items-center justify-between">
-        <span class="text-xl font-bold text-gray-900">{{ formatPrice(activity.price) }}</span>
+        <div>
+          <span class="text-xl font-bold text-gray-900">{{ formatPrice(activity.is_on_sale ? activity.sale_price : activity.price) }}</span>
+          <span v-if="activity.is_on_sale" class="ml-2 text-sm text-gray-400 line-through">{{ formatPrice(activity.price) }}</span>
+        </div>
         <Link :href="route('product.show', activity.slug)"
           class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors">
           {{ ctaLabel }}
@@ -88,6 +92,7 @@ import { computed } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { useI18n } from '@/composables/useI18n'
 import { useWishlist } from '@/composables/useWishlist'
+import SaleCountdown from '@/components/SaleCountdown.vue'
 
 const props = defineProps({ activity: Object })
 const page = usePage()

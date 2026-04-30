@@ -5,6 +5,7 @@ namespace App\Filament\Manager\Resources;
 use App\Filament\Manager\Resources\OrderResource\Pages;
 use App\Models\Order;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -109,7 +110,7 @@ class OrderResource extends Resource
         ]);
     }
 
-    private static function formatItemOptions(array $options): string
+    public static function formatItemOptions(array $options): string
     {
         $labels = [
             'booking_date' => 'Date',
@@ -209,6 +210,7 @@ class OrderResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([
+                ViewAction::make(),
                 EditAction::make(),
             ]);
     }
@@ -217,6 +219,7 @@ class OrderResource extends Resource
     {
         return [
             'index' => Pages\ListOrders::route('/'),
+            'view' => Pages\ViewOrder::route('/{record}'),
             'edit' => Pages\EditOrder::route('/{record}/edit'),
         ];
     }

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
@@ -18,11 +20,11 @@ use Spatie\Translatable\HasTranslations;
 
 class Product extends Model implements HasMedia
 {
-    use HasSlug, HasTags, HasTranslations, InteractsWithMedia, Searchable, SoftDeletes;
+    use HasFactory, HasSlug, HasTags, HasTranslations, InteractsWithMedia, Searchable, SoftDeletes;
 
     public array $translatable = ['name', 'description', 'short_description'];
 
-    protected $appends = ['image_url', 'in_stock'];
+    protected $appends = ['image_url', 'in_stock', 'is_on_sale'];
 
     protected $fillable = [
         'category_id',
@@ -32,6 +34,9 @@ class Product extends Model implements HasMedia
         'short_description',
         'price',
         'compare_price',
+        'sale_price',
+        'sale_starts_at',
+        'sale_ends_at',
         'stock',
         'sku',
         'status',
@@ -43,6 +48,9 @@ class Product extends Model implements HasMedia
         return [
             'price' => 'decimal:2',
             'compare_price' => 'decimal:2',
+            'sale_price' => 'decimal:2',
+            'sale_starts_at' => 'datetime',
+            'sale_ends_at' => 'datetime',
             'stock' => 'integer',
             'featured' => 'boolean',
         ];
@@ -103,6 +111,26 @@ class Product extends Model implements HasMedia
         return $this->hasMany(ActivitySlot::class);
     }
 
+    public function priceTiers(): MorphMany
+    {
+        return $this->morphMany(PriceTier::class, 'tierable')->orderBy('min_quantity');
+    }
+
+    public function waitlistEntries(): MorphMany
+    {
+        return $this->morphMany(Waitlist::class, 'waitlistable');
+    }
+
+    public function priceForQuantity(int $quantity): float
+    {
+        $tier = $this->priceTiers
+            ->filter(fn ($t) => $t->min_quantity <= $quantity)
+            ->sortByDesc('min_quantity')
+            ->first();
+
+        return $tier ? (float) $tier->price : (float) $this->price;
+    }
+
     public function toArray(): array
     {
         $array = parent::toArray();
@@ -158,5 +186,28 @@ class Product extends Model implements HasMedia
     public function isInStock(): bool
     {
         return $this->stock > 0;
+    }
+
+    public function getIsOnSaleAttribute(): bool
+    {
+        if (! $this->sale_price) {
+            return false;
+        }
+        $now = now();
+
+        return (! $this->sale_starts_at || $this->sale_starts_at <= $now)
+            && (! $this->sale_ends_at || $this->sale_ends_at >= $now);
+    }
+
+    public function isOnSale(): bool
+    {
+        return $this->getIsOnSaleAttribute();
+    }
+
+    public function scopeOnSale($query)
+    {
+        return $query->whereNotNull('sale_price')
+            ->where(fn ($q) => $q->whereNull('sale_starts_at')->orWhere('sale_starts_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('sale_ends_at')->orWhere('sale_ends_at', '>=', now()));
     }
 }

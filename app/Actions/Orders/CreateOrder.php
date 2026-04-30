@@ -8,6 +8,7 @@ use App\Http\Requests\CheckoutRequest;
 use App\Mail\OrderConfirmation;
 use App\Models\ActivitySlot;
 use App\Models\Cart;
+use App\Models\GiftCard;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -28,7 +29,14 @@ class CreateOrder
     {
         return DB::transaction(function () use ($cart, $paymentMethod, $billingAddress, $shippingAddress, $usePoints) {
             $subtotal = $cart->subtotal;
-            $discount = $cart->coupon?->calculateDiscount($subtotal) ?? 0;
+            $couponDiscount = $cart->coupon?->calculateDiscount($subtotal) ?? 0;
+
+            $giftCard = $cart->gift_card_id ? GiftCard::find($cart->gift_card_id) : null;
+            $giftCardDiscount = ($giftCard && $giftCard->isUsable())
+                ? (float) min($giftCard->remaining_balance, $subtotal - $couponDiscount)
+                : 0;
+
+            $discount = $couponDiscount + $giftCardDiscount;
 
             $user = $cart->user_id ? User::find($cart->user_id) : null;
             $pointsDiscount = 0;
@@ -77,6 +85,15 @@ class CreateOrder
                 $cart->coupon->increment('uses_count');
             }
 
+            if ($giftCard && $giftCardDiscount > 0) {
+                $newBalance = $giftCard->remaining_balance - $giftCardDiscount;
+                $giftCard->update([
+                    'remaining_balance' => $newBalance,
+                    'is_active' => $newBalance > 0,
+                    'redeemed_by_user_id' => $user?->id,
+                ]);
+            }
+
             ClearCart::run($cart);
 
             if ($user) {
@@ -119,8 +136,8 @@ class CreateOrder
     public function asController(CheckoutRequest $request): RedirectResponse
     {
         $cart = auth()->check()
-            ? Cart::where('user_id', auth()->id())->with(['items.product', 'items.cartable', 'coupon'])->firstOrFail()
-            : Cart::where('session_id', $request->session()->getId())->with(['items.product', 'items.cartable', 'coupon'])->firstOrFail();
+            ? Cart::where('user_id', auth()->id())->with(['items.product', 'items.cartable', 'coupon', 'giftCard'])->firstOrFail()
+            : Cart::where('session_id', $request->session()->getId())->with(['items.product', 'items.cartable', 'coupon', 'giftCard'])->firstOrFail();
 
         if ($cart->items->isEmpty()) {
             return back()->with('error', 'Your cart is empty.');

@@ -90,6 +90,31 @@ class VehicleResource extends Resource
                     ->columnSpanFull(),
             ]),
 
+            Section::make('Volume Pricing')
+                ->description('Optional tiered prices applied at checkout based on quantity.')
+                ->collapsed()
+                ->schema([
+                    Forms\Components\Repeater::make('priceTiers')
+                        ->relationship()
+                        ->schema([
+                            Forms\Components\TextInput::make('min_quantity')->numeric()->minValue(2)->required()->label('Min Days'),
+                            Forms\Components\TextInput::make('price')->numeric()->prefix('€')->required()->label('Price per Day'),
+                        ])
+                        ->columns(2)
+                        ->addActionLabel('Add Price Tier')
+                        ->orderColumn(false)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Flash Sale')
+                ->description('Leave blank to disable the sale pricing.')
+                ->collapsed()
+                ->schema([
+                    Forms\Components\TextInput::make('sale_price')->numeric()->prefix('€')->label('Sale Price per Day'),
+                    Forms\Components\DateTimePicker::make('sale_starts_at')->label('Sale Starts At')->native(false),
+                    Forms\Components\DateTimePicker::make('sale_ends_at')->label('Sale Ends At')->native(false),
+                ])->columns(3),
+
             Section::make('Descriptions')->schema([
                 Tabs::make('Translations')->tabs([
                     Tabs\Tab::make('English')->schema([

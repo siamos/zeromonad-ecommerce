@@ -44,6 +44,11 @@
                 </div>
                 <div class="flex items-center gap-4">
                   <span class="font-bold text-gray-900">{{ formatPrice(item.product.price * item.quantity) }}</span>
+                  <Link v-if="page.props.auth?.user" :href="route('saved-items.store')" method="post"
+                    :data="{ saveable_type: 'activity', saveable_id: item.product_id }" as="button"
+                    class="text-xs text-emerald-500 hover:text-emerald-700 transition-colors cursor-pointer whitespace-nowrap">
+                    Save
+                  </Link>
                   <Link :href="route('cart.remove', item.id)" method="delete" as="button"
                     class="text-gray-400 hover:text-red-500 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,6 +85,19 @@
               />
               <button type="submit" class="w-full sm:w-auto whitespace-nowrap bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
                 {{ t('cart.coupon_apply') }}
+              </button>
+            </form>
+
+            <!-- Gift Card -->
+            <form @submit.prevent="applyGiftCard" class="flex flex-col gap-2 sm:flex-row">
+              <input
+                v-model="giftCardCode"
+                type="text"
+                placeholder="Gift card code (GC-XXXX-XXXX)"
+                class="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <button type="submit" class="w-full sm:w-auto whitespace-nowrap bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors cursor-pointer">
+                Apply Gift Card
               </button>
             </form>
 
@@ -146,6 +164,7 @@ const route = window.route
 const props = defineProps({ cart: Object })
 const page = usePage()
 const couponCode = ref('')
+const giftCardCode = ref('')
 
 const freeShippingThreshold = computed(() => page.props.free_shipping_threshold ?? 50)
 const freeShippingRemaining = computed(() => Math.max(0, freeShippingThreshold.value - (props.cart?.subtotal ?? 0)))
@@ -172,5 +191,11 @@ function updateQty(item, qty) {
 
 function applyCoupon() {
   router.post(route('cart.coupon'), { code: couponCode.value }, { preserveScroll: true })
+}
+
+function applyGiftCard() {
+  if (giftCardCode.value) {
+    router.post(route('cart.gift-card'), { gift_card_code: giftCardCode.value }, { preserveScroll: true })
+  }
 }
 </script>

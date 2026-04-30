@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Jobs\NotifyStockAlert;
+use App\Jobs\NotifyWaitlist;
 use App\Models\Product;
 
 class ProductObserver
@@ -18,6 +19,7 @@ class ProductObserver
     {
         if ($product->_stockRestored ?? false) {
             NotifyStockAlert::dispatch($product);
+            NotifyWaitlist::dispatch($product);
         }
     }
 }

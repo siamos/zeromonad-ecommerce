@@ -67,6 +67,7 @@
         </span>
       </div>
 
+      <SaleCountdown v-if="activity.is_on_sale && activity.sale_ends_at" :ends-at="activity.sale_ends_at" class="mb-3" />
       <div class="flex items-center justify-between">
         <span class="text-sm text-gray-500"></span>
         <Link :href="route('product.show', activity.slug)"
@@ -83,6 +84,7 @@ import { computed } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { useI18n } from '@/composables/useI18n'
 import { useWishlist } from '@/composables/useWishlist'
+import SaleCountdown from '@/components/SaleCountdown.vue'
 
 const props = defineProps({ activity: Object })
 const page = usePage()

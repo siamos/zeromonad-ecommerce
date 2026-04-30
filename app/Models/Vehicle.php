@@ -21,7 +21,7 @@ class Vehicle extends Model implements HasMedia
 
     public array $translatable = ['title', 'short_description', 'description'];
 
-    protected $appends = ['image_url', 'name'];
+    protected $appends = ['image_url', 'name', 'is_on_sale'];
 
     protected $fillable = [
         'category_id',
@@ -33,6 +33,9 @@ class Vehicle extends Model implements HasMedia
         'description',
         'price_per_day',
         'compare_price',
+        'sale_price',
+        'sale_starts_at',
+        'sale_ends_at',
         'vehicle_type',
         'transmission',
         'seats',
@@ -50,6 +53,9 @@ class Vehicle extends Model implements HasMedia
         return [
             'price_per_day' => 'decimal:2',
             'compare_price' => 'decimal:2',
+            'sale_price' => 'decimal:2',
+            'sale_starts_at' => 'datetime',
+            'sale_ends_at' => 'datetime',
             'year' => 'integer',
             'seats' => 'integer',
             'is_available' => 'boolean',
@@ -101,6 +107,21 @@ class Vehicle extends Model implements HasMedia
     public function orderItems(): MorphMany
     {
         return $this->morphMany(OrderItem::class, 'orderable');
+    }
+
+    public function priceTiers(): MorphMany
+    {
+        return $this->morphMany(PriceTier::class, 'tierable')->orderBy('min_quantity');
+    }
+
+    public function priceForQuantity(int $quantity): float
+    {
+        $tier = $this->priceTiers
+            ->filter(fn ($t) => $t->min_quantity <= $quantity)
+            ->sortByDesc('min_quantity')
+            ->first();
+
+        return $tier ? (float) $tier->price : (float) $this->price_per_day;
     }
 
     public function toArray(): array
@@ -157,5 +178,28 @@ class Vehicle extends Model implements HasMedia
     public function isPublished(): bool
     {
         return $this->status === 'published';
+    }
+
+    public function getIsOnSaleAttribute(): bool
+    {
+        if (! $this->sale_price) {
+            return false;
+        }
+        $now = now();
+
+        return (! $this->sale_starts_at || $this->sale_starts_at <= $now)
+            && (! $this->sale_ends_at || $this->sale_ends_at >= $now);
+    }
+
+    public function isOnSale(): bool
+    {
+        return $this->getIsOnSaleAttribute();
+    }
+
+    public function scopeOnSale(Builder $query): Builder
+    {
+        return $query->whereNotNull('sale_price')
+            ->where(fn ($q) => $q->whereNull('sale_starts_at')->orWhere('sale_starts_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('sale_ends_at')->orWhere('sale_ends_at', '>=', now()));
     }
 }

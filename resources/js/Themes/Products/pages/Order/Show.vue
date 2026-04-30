@@ -18,15 +18,50 @@
           <h1 class="text-2xl font-bold text-gray-900">{{ order.order_number }}</h1>
           <p class="text-sm text-gray-500 mt-1">Placed on {{ formatDate(order.created_at) }}</p>
         </div>
-        <span class="text-sm px-3 py-1.5 rounded-full font-medium"
-          :class="{
-            'bg-yellow-100 text-yellow-800': order.status === 'pending',
-            'bg-blue-100 text-blue-800': order.status === 'processing',
-            'bg-green-100 text-green-800': order.status === 'delivered',
-            'bg-red-100 text-red-800': order.status === 'cancelled',
-          }">
-          {{ order.status }}
-        </span>
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-sm px-3 py-1.5 rounded-full font-medium"
+            :class="{
+              'bg-yellow-100 text-yellow-800': order.status === 'pending',
+              'bg-blue-100 text-blue-800': order.status === 'processing',
+              'bg-green-100 text-green-800': order.status === 'delivered',
+              'bg-red-100 text-red-800': order.status === 'cancelled',
+            }">
+            {{ order.status }}
+          </span>
+          <a :href="route('account.orders.invoice', order.id)"
+            class="text-sm text-indigo-600 hover:text-indigo-800 underline">
+            Download Invoice
+          </a>
+          <button v-if="canRequestReturn"
+            @click="showReturnModal = true"
+            class="text-sm px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition">
+            Request Return
+          </button>
+        </div>
+      </div>
+
+      <!-- Status timeline -->
+      <div v-if="!['cancelled','refunded'].includes(order.status)" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+        <h2 class="font-semibold text-gray-900 mb-5 text-sm">Order Progress</h2>
+        <div class="flex items-center">
+          <template v-for="(step, i) in timelineSteps" :key="step.key">
+            <div class="flex flex-col items-center flex-1">
+              <div :class="[
+                'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors',
+                stepDone(step.key) ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400'
+              ]">{{ i + 1 }}</div>
+              <span class="text-xs mt-1.5 text-center leading-tight"
+                :class="stepDone(step.key) ? 'text-indigo-600 font-medium' : 'text-gray-400'">
+                {{ step.label }}
+              </span>
+            </div>
+            <div v-if="i < timelineSteps.length - 1"
+              :class="['flex-1 h-0.5 mb-5', stepDone(timelineSteps[i + 1].key) ? 'bg-indigo-600' : 'bg-gray-200']" />
+          </template>
+        </div>
+      </div>
+      <div v-else class="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 text-sm text-red-700 font-medium">
+        This order was {{ order.status }}.
       </div>
 
       <!-- Items -->
@@ -93,15 +128,86 @@
         </div>
       </div>
     </div>
+
+    <!-- Return Request Modal -->
+    <Teleport to="body">
+      <div v-if="showReturnModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Request a Return</h2>
+          <form @submit.prevent="submitReturn">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+              <select v-model="returnForm.reason"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Select a reason…</option>
+                <option value="Damaged item">Damaged item</option>
+                <option value="Wrong item received">Wrong item received</option>
+                <option value="Item not as described">Item not as described</option>
+                <option value="Changed my mind">Changed my mind</option>
+                <option value="Other">Other</option>
+              </select>
+              <p v-if="returnForm.errors.reason" class="text-red-500 text-xs mt-1">{{ returnForm.errors.reason }}</p>
+            </div>
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Details (optional)</label>
+              <textarea v-model="returnForm.details" rows="3"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                placeholder="Please describe the issue…" />
+            </div>
+            <div class="flex gap-3">
+              <button type="button" @click="showReturnModal = false"
+                class="flex-1 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button type="submit" :disabled="returnForm.processing"
+                class="flex-1 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition disabled:opacity-60">
+                Submit Request
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </Layout>
 </template>
 
 <script setup>
-import { Head, Link, usePage } from '@inertiajs/vue3'
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
 import Layout from '../../Layout.vue'
 
 const props = defineProps({ order: Object })
 const page = usePage()
+
+const showReturnModal = ref(false)
+const returnForm = useForm({ reason: '', details: '' })
+
+const canRequestReturn = computed(() =>
+  props.order.status === 'delivered' && props.order.payment_status === 'paid'
+)
+
+function submitReturn() {
+  returnForm.post(route('account.orders.return', props.order.id), {
+    onSuccess: () => { showReturnModal.value = false; returnForm.reset() },
+  })
+}
+
+const timelineSteps = [
+  { key: 'pending', label: 'Placed' },
+  { key: 'processing', label: 'Processing' },
+  { key: 'paid', label: 'Paid' },
+  { key: 'shipped', label: 'Shipped' },
+  { key: 'delivered', label: 'Delivered' },
+]
+
+const statusOrder = ['pending', 'processing', 'paid', 'shipped', 'delivered']
+
+function stepDone(key) {
+  const currentIdx = statusOrder.indexOf(props.order.status)
+  const stepIdx = statusOrder.indexOf(key)
+  return stepIdx <= currentIdx
+}
 
 function formatPrice(price) {
   return new Intl.NumberFormat('el-GR', {

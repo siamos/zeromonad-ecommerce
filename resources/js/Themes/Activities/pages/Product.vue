@@ -71,6 +71,43 @@
             </div>
           </div>
 
+          <!-- Difficulty, age, weather badges -->
+          <div class="flex flex-wrap gap-2">
+            <span v-if="activity.difficulty"
+              :class="['text-xs font-semibold px-3 py-1 rounded-full', difficultyClass]">
+              {{ difficultyLabel }}
+            </span>
+            <span v-if="activity.min_age" class="text-xs font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-700">
+              Age {{ activity.min_age }}+
+            </span>
+          </div>
+
+          <!-- Weather warning -->
+          <div v-if="activity.weather_dependent" class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+            </svg>
+            <div>
+              <p class="text-sm font-semibold text-amber-800">Weather Dependent</p>
+              <p class="text-xs text-amber-700 mt-0.5">This activity may be cancelled or rescheduled due to adverse weather conditions.</p>
+            </div>
+          </div>
+
+          <!-- Cancellation policy -->
+          <div v-if="activity.cancellation_policy" class="border border-gray-100 rounded-xl overflow-hidden">
+            <button @click="policyOpen = !policyOpen"
+              class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
+              <span>Cancellation Policy</span>
+              <svg :class="['w-4 h-4 text-gray-400 transition-transform', policyOpen ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div v-if="policyOpen" class="px-4 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3">
+              {{ activity.cancellation_policy }}
+            </div>
+          </div>
+
           <div v-if="activity.description" class="prose prose-emerald max-w-none" v-html="activity.description" />
 
           <div v-if="activity.tags?.length" class="flex flex-wrap gap-2">
@@ -138,22 +175,28 @@
           <ActivityCard v-for="item in recommended" :key="item.id" :activity="item" />
         </div>
       </div>
+
+      <RecentlyViewed accent-color="text-emerald-600" />
     </div>
   </Layout>
 </template>
 
 <script setup>
 import { Head, usePage } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import Layout from '../Layout.vue'
 import BookingForm from '../components/BookingForm.vue'
 import ReviewForm from '../components/ReviewForm.vue'
 import ActivityCard from '../components/ActivityCard.vue'
+import RecentlyViewed from '@/components/RecentlyViewed.vue'
 import { useI18n } from '@/composables/useI18n'
+import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import Breadcrumb from '@/components/Breadcrumb.vue'
 
 const { t } = useI18n()
+const { push: pushRecentlyViewed } = useRecentlyViewed()
 const route = window.route
+const policyOpen = ref(false)
 const props = defineProps({
   activity: Object,
   recommended: Array,
@@ -163,6 +206,25 @@ const props = defineProps({
 })
 const page = usePage()
 const approvedReviews = computed(() => props.activity.reviews?.filter(r => r.status === 'approved') ?? [])
+
+const difficultyLabel = computed(() => {
+  const map = { easy: 'Easy', moderate: 'Moderate', hard: 'Hard', expert: 'Expert' }
+  return map[props.activity.difficulty] ?? props.activity.difficulty
+})
+
+const difficultyClass = computed(() => {
+  const map = {
+    easy: 'bg-green-100 text-green-700',
+    moderate: 'bg-yellow-100 text-yellow-700',
+    hard: 'bg-orange-100 text-orange-700',
+    expert: 'bg-red-100 text-red-700',
+  }
+  return map[props.activity.difficulty] ?? 'bg-gray-100 text-gray-700'
+})
+
+onMounted(() => {
+  pushRecentlyViewed({ ...props.activity, name: props.activity.name ?? props.activity.title })
+})
 
 const breadcrumbs = computed(() => {
   const items = [

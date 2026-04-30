@@ -22,7 +22,7 @@ class Accommodation extends Model implements HasMedia
 
     public array $translatable = ['title', 'description', 'short_description'];
 
-    protected $appends = ['image_url', 'name'];
+    protected $appends = ['image_url', 'name', 'is_on_sale'];
 
     protected $fillable = [
         'category_id',
@@ -32,6 +32,9 @@ class Accommodation extends Model implements HasMedia
         'description',
         'price_per_night',
         'compare_price',
+        'sale_price',
+        'sale_starts_at',
+        'sale_ends_at',
         'location',
         'bedrooms',
         'bathrooms',
@@ -47,6 +50,9 @@ class Accommodation extends Model implements HasMedia
         return [
             'price_per_night' => 'decimal:2',
             'compare_price' => 'decimal:2',
+            'sale_price' => 'decimal:2',
+            'sale_starts_at' => 'datetime',
+            'sale_ends_at' => 'datetime',
             'bedrooms' => 'integer',
             'bathrooms' => 'integer',
             'max_guests' => 'integer',
@@ -104,6 +110,21 @@ class Accommodation extends Model implements HasMedia
     public function orderItems(): MorphMany
     {
         return $this->morphMany(OrderItem::class, 'orderable');
+    }
+
+    public function priceTiers(): MorphMany
+    {
+        return $this->morphMany(PriceTier::class, 'tierable')->orderBy('min_quantity');
+    }
+
+    public function priceForQuantity(int $quantity): float
+    {
+        $tier = $this->priceTiers
+            ->filter(fn ($t) => $t->min_quantity <= $quantity)
+            ->sortByDesc('min_quantity')
+            ->first();
+
+        return $tier ? (float) $tier->price : (float) $this->price_per_night;
     }
 
     public function toArray(): array
@@ -164,5 +185,28 @@ class Accommodation extends Model implements HasMedia
             ->where('start_date', '<=', $checkOut)
             ->where('end_date', '>=', $checkIn)
             ->exists();
+    }
+
+    public function getIsOnSaleAttribute(): bool
+    {
+        if (! $this->sale_price) {
+            return false;
+        }
+        $now = now();
+
+        return (! $this->sale_starts_at || $this->sale_starts_at <= $now)
+            && (! $this->sale_ends_at || $this->sale_ends_at >= $now);
+    }
+
+    public function isOnSale(): bool
+    {
+        return $this->getIsOnSaleAttribute();
+    }
+
+    public function scopeOnSale(Builder $query): Builder
+    {
+        return $query->whereNotNull('sale_price')
+            ->where(fn ($q) => $q->whereNull('sale_starts_at')->orWhere('sale_starts_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('sale_ends_at')->orWhere('sale_ends_at', '>=', now()));
     }
 }

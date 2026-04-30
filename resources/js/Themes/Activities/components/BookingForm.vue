@@ -78,8 +78,11 @@
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('booking.participants') }}</label>
+          <div v-if="minParticipants > 1" class="text-xs text-amber-600 mb-2">
+            Minimum {{ minParticipants }} participants required
+          </div>
           <div class="flex items-center gap-3">
-            <button type="button" @click="form.quantity = Math.max(1, form.quantity - 1)"
+            <button type="button" @click="form.quantity = Math.max(minParticipants, form.quantity - 1)"
               class="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-emerald-500 hover:text-emerald-600 transition-colors cursor-pointer">−</button>
             <span class="w-8 text-center font-semibold text-gray-900">{{ form.quantity }}</span>
             <button type="button" @click="form.quantity = Math.min(maxQty, form.quantity + 1)"
@@ -89,12 +92,12 @@
 
         <div class="border-t border-gray-100 pt-4 space-y-1">
           <div class="flex justify-between text-sm text-gray-600">
-            <span>{{ formatPrice(activity.price) }} × {{ form.quantity }}</span>
-            <span>{{ formatPrice(activity.price * form.quantity) }}</span>
+            <span>{{ formatPrice(effectivePrice) }} × {{ form.quantity }}</span>
+            <span>{{ formatPrice(effectivePrice * form.quantity) }}</span>
           </div>
           <div class="flex justify-between font-bold text-gray-900">
             <span>{{ t('booking.total') }}</span>
-            <span>{{ formatPrice(activity.price * form.quantity) }}</span>
+            <span>{{ formatPrice(effectivePrice * form.quantity) }}</span>
           </div>
         </div>
 
@@ -129,6 +132,9 @@ const hasSlots = computed(() => props.availableSlots.length > 0 || props.activit
 
 const selectedSlot = computed(() => props.availableSlots.find(s => s.id === form.slot_id) ?? null)
 
+const minParticipants = computed(() => props.activity.min_participants ?? 1)
+const effectivePrice = computed(() => props.activity.price_per_person ?? props.activity.price)
+
 const maxQty = computed(() => {
   if (selectedSlot.value) return selectedSlot.value.spots_remaining
   return props.spotsRemaining ?? props.activity.max_participants ?? 99
@@ -154,7 +160,7 @@ const submitDisabled = computed(() => {
 const form = reactive({
   bookable_type: 'activity',
   bookable_id:   props.activity.id,
-  quantity:      1,
+  quantity:      props.activity.min_participants ?? 1,
   booking_date:  '',
   slot_id:       null,
 })

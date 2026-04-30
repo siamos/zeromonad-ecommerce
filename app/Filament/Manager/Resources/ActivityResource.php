@@ -83,7 +83,52 @@ class ActivityResource extends Resource
                 Forms\Components\TextInput::make('duration_minutes')->numeric()->suffix('min')->label('Duration'),
                 Forms\Components\TextInput::make('max_participants')->numeric()->label('Max Participants'),
                 Forms\Components\TextInput::make('booking_cutoff_hours')->numeric()->suffix('h before')->label('Booking Cutoff')->default(24),
+                Forms\Components\Select::make('difficulty')
+                    ->options(['easy' => 'Easy', 'moderate' => 'Moderate', 'hard' => 'Hard', 'expert' => 'Expert'])
+                    ->nullable(),
+                Forms\Components\TextInput::make('min_age')->numeric()->minValue(1)->label('Minimum Age')->suffix('years'),
+                Forms\Components\Toggle::make('weather_dependent')->label('Weather Dependent')->helperText('Warn customers this activity may be cancelled due to weather'),
+                Forms\Components\Textarea::make('cancellation_policy')->label('Cancellation Policy')->rows(3)->columnSpanFull(),
             ])->columns(2),
+
+            Section::make('Group Booking')->schema([
+                Forms\Components\TextInput::make('min_participants')
+                    ->numeric()
+                    ->minValue(1)
+                    ->default(1)
+                    ->label('Min Participants')
+                    ->helperText('Minimum group size required to book'),
+                Forms\Components\TextInput::make('price_per_person')
+                    ->numeric()
+                    ->prefix('€')
+                    ->label('Price Per Person')
+                    ->helperText('When set, overrides base price for group calculations'),
+            ])->columns(2),
+
+            Section::make('Volume Pricing')
+                ->description('Optional tiered prices applied at checkout based on quantity.')
+                ->collapsed()
+                ->schema([
+                    Forms\Components\Repeater::make('priceTiers')
+                        ->relationship()
+                        ->schema([
+                            Forms\Components\TextInput::make('min_quantity')->numeric()->minValue(2)->required()->label('Min Qty'),
+                            Forms\Components\TextInput::make('price')->numeric()->prefix('€')->required()->label('Price per Unit'),
+                        ])
+                        ->columns(2)
+                        ->addActionLabel('Add Price Tier')
+                        ->orderColumn(false)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Flash Sale')
+                ->description('Leave blank to disable the sale pricing.')
+                ->collapsed()
+                ->schema([
+                    Forms\Components\TextInput::make('sale_price')->numeric()->prefix('€'),
+                    Forms\Components\DateTimePicker::make('sale_starts_at')->label('Sale Starts At')->native(false),
+                    Forms\Components\DateTimePicker::make('sale_ends_at')->label('Sale Ends At')->native(false),
+                ])->columns(3),
 
             Section::make('Descriptions')->schema([
                 Tabs::make('Translations')->tabs([

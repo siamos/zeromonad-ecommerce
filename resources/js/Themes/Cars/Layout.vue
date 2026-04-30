@@ -43,6 +43,41 @@
                 </Link>
               </template>
             </div>
+            <!-- Notification Bell -->
+            <div v-if="$page.props.auth.user" class="relative hidden md:block">
+              <button @click="notifOpen = !notifOpen" class="relative text-gray-600 hover:text-slate-800">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span v-if="$page.props.unread_notifications_count > 0"
+                  class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {{ $page.props.unread_notifications_count > 9 ? '9+' : $page.props.unread_notifications_count }}
+                </span>
+              </button>
+              <Teleport to="body">
+                <div v-if="notifOpen" class="fixed inset-0 z-30" @click="notifOpen = false" />
+                <div v-if="notifOpen" class="fixed top-16 right-16 z-40 w-80 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                  <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <span class="font-semibold text-sm text-gray-900">Notifications</span>
+                    <button v-if="$page.props.unread_notifications_count > 0" @click="markAllRead"
+                      class="text-xs text-slate-700 hover:text-slate-900 cursor-pointer">
+                      Mark all read
+                    </button>
+                  </div>
+                  <div v-if="$page.props.recent_notifications?.length" class="divide-y divide-gray-50 max-h-80 overflow-y-auto">
+                    <button v-for="notif in $page.props.recent_notifications" :key="notif.id"
+                      @click="markRead(notif.id, notif.data?.url)"
+                      :class="['w-full text-left px-4 py-3 hover:bg-gray-50 text-sm cursor-pointer', !notif.read_at ? 'bg-slate-50/60' : '']">
+                      <div :class="['font-medium text-gray-900 truncate', !notif.read_at ? 'text-slate-900' : '']">{{ notif.data?.title }}</div>
+                      <div class="text-gray-500 text-xs mt-0.5 line-clamp-2">{{ notif.data?.body }}</div>
+                      <div class="text-gray-400 text-xs mt-1">{{ formatNotifDate(notif.created_at) }}</div>
+                    </button>
+                  </div>
+                  <div v-else class="px-4 py-8 text-center text-sm text-gray-400">No notifications yet</div>
+                </div>
+              </Teleport>
+            </div>
             <!-- Cart -->
             <Link :href="route('cart.index')" class="relative text-gray-600 hover:text-slate-800">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,9 +217,33 @@ import SearchAutocomplete from '@/components/SearchAutocomplete.vue'
 const { t } = useI18n()
 const route = window.route
 const mobileOpen = ref(false)
+const notifOpen = ref(false)
 
 function setLocale(locale) {
   router.post(route('locale.set'), { locale }, { preserveState: false })
+}
+
+function formatNotifDate(dateStr) {
+  if (!dateStr) { return '' }
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 60000)
+  if (diff < 60) { return `${diff}m ago` }
+  if (diff < 1440) { return `${Math.floor(diff / 60)}h ago` }
+  return `${Math.floor(diff / 1440)}d ago`
+}
+
+function markRead(id, url) {
+  router.post(route('notifications.read', id), {}, {
+    preserveScroll: true,
+    onSuccess: () => {
+      notifOpen.value = false
+      if (url) { window.location.href = url }
+    },
+  })
+}
+
+function markAllRead() {
+  router.post(route('notifications.read-all'), {}, { preserveScroll: true })
+  notifOpen.value = false
 }
 </script>
 

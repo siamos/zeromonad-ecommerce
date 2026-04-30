@@ -66,6 +66,7 @@
         </span>
       </div>
 
+      <SaleCountdown v-if="activity.is_on_sale && activity.sale_ends_at" :ends-at="activity.sale_ends_at" class="mb-3" />
       <div class="flex items-center justify-between">
         <span class="text-sm text-gray-500">
           {{ activity.max_guests ? activity.max_guests + ' ' + t('activity.spots') : '' }}
@@ -83,6 +84,7 @@
 import { computed } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { useI18n } from '@/composables/useI18n'
+import SaleCountdown from '@/components/SaleCountdown.vue'
 import { useWishlist } from '@/composables/useWishlist'
 
 const props = defineProps({ activity: Object })

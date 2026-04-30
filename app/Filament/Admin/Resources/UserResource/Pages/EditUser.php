@@ -14,4 +14,10 @@ class EditUser extends EditRecord
     {
         return [Actions\DeleteAction::make()];
     }
+
+    protected function afterSave(): void
+    {
+        $tags = $this->data['segment_tags'] ?? [];
+        $this->record->syncTags($tags);
+    }
 }

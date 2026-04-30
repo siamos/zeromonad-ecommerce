@@ -34,6 +34,31 @@
             </div>
 
             <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Difficulty</label>
+              <div class="space-y-1">
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="radio" v-model="filters.difficulty" value="" class="text-emerald-600" />
+                  <span class="text-gray-600">Any</span>
+                </label>
+                <label v-for="d in difficulties" :key="d.value" class="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="radio" v-model="filters.difficulty" :value="d.value" class="text-emerald-600" />
+                  <span class="text-gray-600">{{ d.label }}</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Minimum Age</label>
+              <input
+                type="number"
+                v-model.number="filters.min_age"
+                min="0"
+                placeholder="Any age"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">{{ t('shop.max_price') }}</label>
               <input
                 type="range"
@@ -116,6 +141,20 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+            <button v-if="filters.difficulty" @click="removeFilter('difficulty')"
+              class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-3 py-1 rounded-full hover:bg-emerald-100 transition-colors">
+              {{ difficultyName }}
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <button v-if="filters.min_age" @click="removeFilter('min_age')"
+              class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-3 py-1 rounded-full hover:bg-emerald-100 transition-colors">
+              Age {{ filters.min_age }}+
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
             <button @click="clearFilters" class="text-xs text-gray-400 hover:text-gray-600 underline ml-1">
               {{ t('shop.clear_filters') }}
             </button>
@@ -152,6 +191,41 @@
           </div>
         </div>
       </div>
+
+      <!-- Bundles Section -->
+      <div v-if="bundles && bundles.length" class="mt-16">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Bundle Deals</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div v-for="bundle in bundles" :key="bundle.id"
+            class="bg-white rounded-xl border border-stone-100 shadow-sm p-6 flex flex-col gap-4">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-semibold text-gray-900 text-lg">{{ bundle.name }}</h3>
+                <p v-if="bundle.description" class="text-sm text-gray-500 mt-1">{{ bundle.description }}</p>
+              </div>
+              <span class="text-xl font-bold text-emerald-600 whitespace-nowrap">€{{ bundle.price }}</span>
+            </div>
+            <ul class="space-y-1">
+              <li v-for="item in bundle.items" :key="item.id"
+                class="flex items-center gap-2 text-sm text-gray-600">
+                <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{{ item.product?.name && typeof item.product.name === 'object' ? item.product.name.en : item.product?.name }}</span>
+                <span v-if="item.quantity > 1" class="text-gray-400">×{{ item.quantity }}</span>
+              </li>
+            </ul>
+            <form :action="route('cart.add')" method="POST" class="mt-auto">
+              <input type="hidden" name="_token" :value="csrfToken" />
+              <input type="hidden" name="bundle_id" :value="bundle.id" />
+              <button type="submit"
+                class="w-full bg-emerald-600 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-emerald-700 transition-colors cursor-pointer">
+                Add Bundle to Cart
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   </Layout>
 </template>
@@ -170,21 +244,37 @@ const props = defineProps({
   activities: Object,
   categories: Array,
   filters: Object,
+  bundles: { type: Array, default: () => [] },
 })
 
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? ''
+
+const difficulties = [
+  { value: 'easy', label: 'Easy' },
+  { value: 'moderate', label: 'Moderate' },
+  { value: 'hard', label: 'Hard' },
+  { value: 'expert', label: 'Expert' },
+]
+
 const filters = reactive({
-  category:  props.filters?.category  ?? '',
-  date:      props.filters?.date      ?? '',
-  max_price: props.filters?.max_price ?? 1000,
-  sort:      props.filters?.sort      ?? '',
+  category:   props.filters?.category   ?? '',
+  date:       props.filters?.date       ?? '',
+  max_price:  props.filters?.max_price  ?? 1000,
+  sort:       props.filters?.sort       ?? '',
+  difficulty: props.filters?.difficulty ?? '',
+  min_age:    props.filters?.min_age    ?? '',
 })
 
 const hasActiveFilters = computed(() =>
-  filters.category || filters.date || filters.max_price < 1000 || filters.sort
+  filters.category || filters.date || filters.max_price < 1000 || filters.sort || filters.difficulty || filters.min_age
 )
 
 const categoryName = computed(() =>
   props.categories?.find(c => c.slug === filters.category)?.name ?? ''
+)
+
+const difficultyName = computed(() =>
+  difficulties.find(d => d.value === filters.difficulty)?.label ?? ''
 )
 
 const sortLabel = computed(() => ({
@@ -199,7 +289,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  Object.assign(filters, { category: '', date: '', max_price: 1000, sort: '' })
+  Object.assign(filters, { category: '', date: '', max_price: 1000, sort: '', difficulty: '', min_age: '' })
   applyFilters()
 }
 

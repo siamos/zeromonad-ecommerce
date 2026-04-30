@@ -82,6 +82,31 @@ class ProductResource extends Resource
                 ])->columnSpanFull(),
             ]),
 
+            Section::make('Volume Pricing')
+                ->description('Optional tiered prices applied at checkout based on quantity.')
+                ->collapsed()
+                ->schema([
+                    Forms\Components\Repeater::make('priceTiers')
+                        ->relationship()
+                        ->schema([
+                            Forms\Components\TextInput::make('min_quantity')->numeric()->minValue(2)->required()->label('Min Qty'),
+                            Forms\Components\TextInput::make('price')->numeric()->prefix('€')->required()->label('Price per Unit'),
+                        ])
+                        ->columns(2)
+                        ->addActionLabel('Add Price Tier')
+                        ->orderColumn(false)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Flash Sale')
+                ->description('Leave blank to disable the sale pricing.')
+                ->collapsed()
+                ->schema([
+                    Forms\Components\TextInput::make('sale_price')->numeric()->prefix('€'),
+                    Forms\Components\DateTimePicker::make('sale_starts_at')->label('Sale Starts At')->native(false),
+                    Forms\Components\DateTimePicker::make('sale_ends_at')->label('Sale Ends At')->native(false),
+                ])->columns(3),
+
             Section::make('Booking Details')
                 ->description('Only needed when using the Booking Platform theme')
                 ->collapsed()

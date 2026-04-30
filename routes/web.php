@@ -4,16 +4,23 @@ use App\Actions\Cart\AddToCart;
 use App\Actions\Cart\RemoveFromCart;
 use App\Actions\Cart\UpdateCartItem;
 use App\Actions\Coupons\ApplyCoupon;
+use App\Actions\GiftCards\RedeemGiftCard;
 use App\Actions\Orders\CreateOrder;
+use App\Actions\Orders\RequestReturn;
 use App\Actions\Payments\VerifyPayment;
 use App\Actions\Reviews\SubmitReview;
+use App\Actions\Waitlist\JoinWaitlist;
 use App\Http\Controllers\AccommodationController;
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SavedItemController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StockAlertController;
@@ -80,6 +87,7 @@ Route::prefix('cart')->name('cart.')->group(function () {
     Route::patch('/update/{item}', UpdateCartItem::class)->name('update');
     Route::delete('/remove/{item}', RemoveFromCart::class)->name('remove');
     Route::post('/coupon', ApplyCoupon::class)->name('coupon');
+    Route::post('/gift-card', RedeemGiftCard::class)->name('gift-card');
 });
 
 // Checkout (guest-friendly)
@@ -95,6 +103,13 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
     Route::get('/', [OrderController::class, 'index'])->name('index');
     Route::get('/orders', [OrderController::class, 'orders'])->name('orders');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+    Route::get('/orders/{order}/tickets/{ticket}', [OrderController::class, 'ticket'])->name('orders.ticket');
+    Route::post('/orders/{order}/returns', RequestReturn::class)->name('orders.return');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/addresses', [AddressController::class, 'store'])->name('addresses.store');
+    Route::put('/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
+    Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
 });
 
 // Reviews (requires auth)
@@ -105,6 +120,21 @@ Route::middleware('auth')->post('/wishlist/toggle', [WishlistController::class, 
 
 // Back-in-stock alerts (no auth required)
 Route::post('/stock-alerts', [StockAlertController::class, 'store'])->name('stock-alerts.store');
+
+// Waitlist (no auth required)
+Route::post('/waitlist', JoinWaitlist::class)->name('waitlist.join');
+
+// Save for Later (auth required)
+Route::middleware('auth')->group(function () {
+    Route::post('/saved-items', [SavedItemController::class, 'store'])->name('saved-items.store');
+    Route::delete('/saved-items/{savedItem}', [SavedItemController::class, 'destroy'])->name('saved-items.destroy');
+});
+
+// Notifications (auth required)
+Route::middleware('auth')->group(function () {
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+});
 
 // Locale switcher
 Route::post('/locale', function (Request $request) {

@@ -6,6 +6,8 @@ use App\Filament\Manager\Widgets\LowStockWidget;
 use App\Filament\Manager\Widgets\ManagerStatsOverview;
 use App\Filament\Manager\Widgets\PaymentMethodChart;
 use App\Filament\Manager\Widgets\PendingOrdersWidget;
+use App\Filament\Manager\Widgets\RevenueByPeriodWidget;
+use App\Filament\Manager\Widgets\TopCustomersWidget;
 use App\Filament\Manager\Widgets\TopProductsWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 
@@ -24,6 +26,8 @@ class Dashboard extends BaseDashboard
             LowStockWidget::class,
             TopProductsWidget::class,
             PaymentMethodChart::class,
+            RevenueByPeriodWidget::class,
+            TopCustomersWidget::class,
         ];
     }
 

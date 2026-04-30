@@ -22,8 +22,18 @@ class LatestOrders extends BaseWidget
             ->columns([
                 Tables\Columns\TextColumn::make('order_number')->searchable(),
                 Tables\Columns\TextColumn::make('user.name')->label('Customer')->default('Guest'),
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors(['warning' => 'pending', 'success' => 'paid', 'primary' => 'processing']),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'pending' => 'warning',
+                        'processing' => 'primary',
+                        'paid' => 'success',
+                        'shipped' => 'info',
+                        'delivered' => 'success',
+                        'cancelled' => 'danger',
+                        'refunded' => 'gray',
+                        default => 'secondary',
+                    }),
                 Tables\Columns\TextColumn::make('total')->money('EUR'),
                 Tables\Columns\TextColumn::make('created_at')->since(),
             ]);

@@ -48,6 +48,15 @@ class UserResource extends Resource
                     ->relationship('roles', 'name')
                     ->multiple()
                     ->preload(),
+                Forms\Components\TagsInput::make('segment_tags')
+                    ->label('Segments')
+                    ->placeholder('Add segment...')
+                    ->helperText('Tags used for coupon eligibility (e.g. vip, wholesale).')
+                    ->afterStateHydrated(function (Forms\Components\TagsInput $component, $record): void {
+                        $component->state($record?->tags->pluck('name')->toArray() ?? []);
+                    })
+                    ->dehydrated(false)
+                    ->columnSpanFull(),
             ])->columns(2),
         ]);
     }

@@ -58,6 +58,10 @@ class CouponResource extends Resource
                 Forms\Components\TextInput::make('max_uses')->numeric(),
                 Forms\Components\DateTimePicker::make('expires_at'),
                 Forms\Components\Toggle::make('is_active')->default(true),
+                Forms\Components\TextInput::make('required_segment')
+                    ->placeholder('e.g. vip, wholesale')
+                    ->helperText('Only users tagged with this segment can use this coupon.')
+                    ->columnSpanFull(),
             ])->columns(2),
         ]);
     }

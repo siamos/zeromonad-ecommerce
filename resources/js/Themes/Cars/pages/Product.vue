@@ -143,21 +143,26 @@
           <ActivityCard v-for="item in recommended" :key="item.id" :activity="item" />
         </div>
       </div>
+
+      <RecentlyViewed accent-color="text-slate-800" />
     </div>
   </Layout>
 </template>
 
 <script setup>
 import { Head, usePage } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import Layout from '../Layout.vue'
 import BookingForm from '../components/BookingForm.vue'
 import ReviewForm from '../components/ReviewForm.vue'
 import ActivityCard from '../components/ActivityCard.vue'
+import RecentlyViewed from '@/components/RecentlyViewed.vue'
 import { useI18n } from '@/composables/useI18n'
+import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import Breadcrumb from '@/components/Breadcrumb.vue'
 
 const { t } = useI18n()
+const { push: pushRecentlyViewed } = useRecentlyViewed()
 const route = window.route
 const props = defineProps({
   vehicle: Object,
@@ -170,6 +175,10 @@ const props = defineProps({
 })
 const page = usePage()
 const approvedReviews = computed(() => props.vehicle.reviews?.filter(r => r.status === 'approved') ?? [])
+
+onMounted(() => {
+  pushRecentlyViewed({ ...props.vehicle, name: `${props.vehicle.make} ${props.vehicle.model} ${props.vehicle.year}`, price: props.vehicle.price_per_day })
+})
 
 const breadcrumbs = computed(() => {
   const items = [

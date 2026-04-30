@@ -12,6 +12,7 @@ class Cart extends Model
     protected $fillable = [
         'user_id',
         'coupon_id',
+        'gift_card_id',
         'session_id',
         'reminder_sent_at',
     ];
@@ -28,6 +29,11 @@ class Cart extends Model
         return $this->belongsTo(Coupon::class);
     }
 
+    public function giftCard(): BelongsTo
+    {
+        return $this->belongsTo(GiftCard::class);
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(CartItem::class);
@@ -42,9 +48,14 @@ class Cart extends Model
 
     protected function discount(): Attribute
     {
-        return Attribute::get(
-            fn () => (float) ($this->coupon?->calculateDiscount($this->subtotal) ?? 0)
-        );
+        return Attribute::get(function () {
+            $couponDiscount = (float) ($this->coupon?->calculateDiscount($this->subtotal) ?? 0);
+            $giftCardDiscount = $this->giftCard?->isUsable()
+                ? (float) min($this->giftCard->remaining_balance, $this->subtotal - $couponDiscount)
+                : 0;
+
+            return $couponDiscount + $giftCardDiscount;
+        });
     }
 
     protected function discountAmount(): Attribute

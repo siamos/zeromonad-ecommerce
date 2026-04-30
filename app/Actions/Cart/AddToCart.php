@@ -3,6 +3,7 @@
 namespace App\Actions\Cart;
 
 use App\Models\Accommodation;
+use App\Models\Bundle;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
@@ -17,6 +18,21 @@ use Lorisleiva\Actions\Concerns\AsAction;
 class AddToCart
 {
     use AsAction;
+
+    public function handleBundle(Bundle $bundle, ?int $userId = null, ?string $sessionId = null): void
+    {
+        $bundle->load('items.product');
+
+        foreach ($bundle->items as $bundleItem) {
+            $this->handle(
+                bookable: $bundleItem->product,
+                quantity: $bundleItem->quantity,
+                options: ['bundle_id' => $bundle->id, 'bundle_name' => $bundle->name],
+                userId: $userId,
+                sessionId: $sessionId,
+            );
+        }
+    }
 
     public function handle(Model $bookable, int $quantity = 1, array $options = [], ?int $userId = null, ?string $sessionId = null): CartItem
     {
@@ -35,13 +51,18 @@ class AddToCart
             ->first();
 
         if ($item) {
+            $newQuantity = $item->quantity + $quantity;
             $item->increment('quantity', $quantity);
+            $newPrice = $this->resolvePrice($bookable, $newQuantity);
+            if ($newPrice !== (float) $item->unit_price) {
+                $item->update(['unit_price' => $newPrice]);
+            }
         } else {
             $itemData = [
                 'cartable_type' => $morphType,
                 'cartable_id' => $bookable->id,
                 'quantity' => $quantity,
-                'unit_price' => $this->resolvePrice($bookable),
+                'unit_price' => $this->resolvePrice($bookable, $quantity),
                 'options' => $options,
             ];
 
@@ -55,8 +76,23 @@ class AddToCart
         return $item->fresh();
     }
 
-    private function resolvePrice(Model $bookable): float
+    private function resolvePrice(Model $bookable, int $quantity = 1): float
     {
+        if (method_exists($bookable, 'priceTiers') && $bookable->priceTiers->isNotEmpty()) {
+            $tier = $bookable->priceTiers
+                ->filter(fn ($t) => $t->min_quantity <= $quantity)
+                ->sortByDesc('min_quantity')
+                ->first();
+
+            if ($tier) {
+                return (float) $tier->price;
+            }
+        }
+
+        if (method_exists($bookable, 'getIsOnSaleAttribute') && $bookable->is_on_sale && $bookable->sale_price) {
+            return (float) $bookable->sale_price;
+        }
+
         return match (true) {
             $bookable instanceof Accommodation => (float) $bookable->price_per_night,
             $bookable instanceof Vehicle => (float) $bookable->price_per_day,
@@ -86,6 +122,7 @@ class AddToCart
         $request->validate([
             'bookable_type' => 'nullable|string|in:product,activity,accommodation,vehicle',
             'bookable_id' => 'nullable|integer',
+            'bundle_id' => 'nullable|exists:bundles,id',
             'product_id' => 'nullable|exists:products,id',
             'quantity' => 'integer|min:1|max:99',
             'booking_date' => 'nullable|date',
@@ -100,6 +137,17 @@ class AddToCart
             'pickup_location_id' => 'nullable|exists:rental_locations,id',
             'dropoff_location_id' => 'nullable|exists:rental_locations,id',
         ]);
+
+        if ($request->bundle_id) {
+            $bundle = Bundle::findOrFail($request->bundle_id);
+            $this->handleBundle(
+                bundle: $bundle,
+                userId: $request->user()?->id,
+                sessionId: $request->session()->getId(),
+            );
+
+            return back()->with('success', 'Bundle "'.$bundle->name.'" added to cart.');
+        }
 
         if ($request->bookable_type && $request->bookable_id) {
             $modelClass = Relation::getMorphedModel($request->bookable_type);

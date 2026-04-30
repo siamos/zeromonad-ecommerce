@@ -6,8 +6,8 @@ use App\Models\Cart;
 use App\Models\Coupon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Lorisleiva\Actions\Concerns\AsAction;
 use Illuminate\Validation\ValidationException;
+use Lorisleiva\Actions\Concerns\AsAction;
 
 class ApplyCoupon
 {
@@ -17,7 +17,9 @@ class ApplyCoupon
     {
         $coupon = Coupon::where('code', strtoupper($code))->first();
 
-        if (! $coupon || ! $coupon->isValid()) {
+        $user = auth()->user();
+
+        if (! $coupon || ! $coupon->isValid($user)) {
             throw ValidationException::withMessages(['code' => 'This coupon is invalid or expired.']);
         }
 

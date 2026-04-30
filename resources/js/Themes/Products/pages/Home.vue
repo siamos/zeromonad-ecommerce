@@ -48,6 +48,10 @@
         </div>
       </div>
     </section>
+
+    <section class="max-w-7xl mx-auto px-4 pb-16">
+      <RecentlyViewed accent-color="text-indigo-600" />
+    </section>
   </Layout>
 </template>
 
@@ -55,6 +59,7 @@
 import { Head, Link } from '@inertiajs/vue3'
 import Layout from '../Layout.vue'
 import ProductCard from '../components/ProductCard.vue'
+import RecentlyViewed from '@/components/RecentlyViewed.vue'
 import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()

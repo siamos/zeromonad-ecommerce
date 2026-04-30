@@ -152,6 +152,41 @@
           </div>
         </div>
       </div>
+
+      <!-- Bundles Section -->
+      <div v-if="bundles && bundles.length" class="mt-16">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Bundle Deals</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div v-for="bundle in bundles" :key="bundle.id"
+            class="bg-white rounded-xl border border-amber-100 shadow-sm p-6 flex flex-col gap-4">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-semibold text-gray-900 text-lg">{{ bundle.name }}</h3>
+                <p v-if="bundle.description" class="text-sm text-gray-500 mt-1">{{ bundle.description }}</p>
+              </div>
+              <span class="text-xl font-bold text-amber-600 whitespace-nowrap">€{{ bundle.price }}</span>
+            </div>
+            <ul class="space-y-1">
+              <li v-for="item in bundle.items" :key="item.id"
+                class="flex items-center gap-2 text-sm text-gray-600">
+                <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{{ item.product?.name && typeof item.product.name === 'object' ? item.product.name.en : item.product?.name }}</span>
+                <span v-if="item.quantity > 1" class="text-gray-400">×{{ item.quantity }}</span>
+              </li>
+            </ul>
+            <form :action="route('cart.add')" method="POST" class="mt-auto">
+              <input type="hidden" name="_token" :value="csrfToken" />
+              <input type="hidden" name="bundle_id" :value="bundle.id" />
+              <button type="submit"
+                class="w-full bg-amber-600 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-amber-700 transition-colors cursor-pointer">
+                Add Bundle to Cart
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   </Layout>
 </template>
@@ -170,7 +205,10 @@ const props = defineProps({
   accommodations: Object,
   categories: Array,
   filters: Object,
+  bundles: { type: Array, default: () => [] },
 })
+
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? ''
 
 const filters = reactive({
   category:  props.filters?.category  ?? '',

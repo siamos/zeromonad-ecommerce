@@ -22,7 +22,7 @@ class Activity extends Model implements HasMedia
 
     public array $translatable = ['title', 'description', 'short_description'];
 
-    protected $appends = ['image_url', 'name'];
+    protected $appends = ['image_url', 'name', 'is_on_sale'];
 
     protected $fillable = [
         'category_id',
@@ -32,10 +32,19 @@ class Activity extends Model implements HasMedia
         'description',
         'price',
         'compare_price',
+        'sale_price',
+        'sale_starts_at',
+        'sale_ends_at',
         'location',
         'duration_minutes',
         'max_participants',
+        'min_participants',
+        'price_per_person',
         'booking_cutoff_hours',
+        'difficulty',
+        'min_age',
+        'weather_dependent',
+        'cancellation_policy',
         'status',
         'featured',
     ];
@@ -45,9 +54,16 @@ class Activity extends Model implements HasMedia
         return [
             'price' => 'decimal:2',
             'compare_price' => 'decimal:2',
+            'sale_price' => 'decimal:2',
+            'sale_starts_at' => 'datetime',
+            'sale_ends_at' => 'datetime',
             'duration_minutes' => 'integer',
             'max_participants' => 'integer',
+            'min_participants' => 'integer',
+            'price_per_person' => 'decimal:2',
             'booking_cutoff_hours' => 'integer',
+            'min_age' => 'integer',
+            'weather_dependent' => 'boolean',
             'featured' => 'boolean',
         ];
     }
@@ -102,6 +118,21 @@ class Activity extends Model implements HasMedia
         return $this->morphMany(OrderItem::class, 'orderable');
     }
 
+    public function priceTiers(): MorphMany
+    {
+        return $this->morphMany(PriceTier::class, 'tierable')->orderBy('min_quantity');
+    }
+
+    public function priceForQuantity(int $quantity): float
+    {
+        $tier = $this->priceTiers
+            ->filter(fn ($t) => $t->min_quantity <= $quantity)
+            ->sortByDesc('min_quantity')
+            ->first();
+
+        return $tier ? (float) $tier->price : (float) $this->price;
+    }
+
     public function toArray(): array
     {
         $array = parent::toArray();
@@ -152,5 +183,28 @@ class Activity extends Model implements HasMedia
     public function isPublished(): bool
     {
         return $this->status === 'published';
+    }
+
+    public function getIsOnSaleAttribute(): bool
+    {
+        if (! $this->sale_price) {
+            return false;
+        }
+        $now = now();
+
+        return (! $this->sale_starts_at || $this->sale_starts_at <= $now)
+            && (! $this->sale_ends_at || $this->sale_ends_at >= $now);
+    }
+
+    public function isOnSale(): bool
+    {
+        return $this->getIsOnSaleAttribute();
+    }
+
+    public function scopeOnSale(Builder $query): Builder
+    {
+        return $query->whereNotNull('sale_price')
+            ->where(fn ($q) => $q->whereNull('sale_starts_at')->orWhere('sale_starts_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('sale_ends_at')->orWhere('sale_ends_at', '>=', now()));
     }
 }

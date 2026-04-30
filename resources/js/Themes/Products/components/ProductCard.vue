@@ -37,11 +37,12 @@
         <span class="text-xs text-gray-500">({{ product.reviews_count }})</span>
       </div>
       <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ product.short_description }}</p>
+      <SaleCountdown v-if="product.is_on_sale && product.sale_ends_at" :ends-at="product.sale_ends_at" class="mt-2" />
       <div class="flex items-center justify-between mt-4">
         <div>
-          <span class="text-xl font-bold text-gray-900">{{ formatPrice(product.price) }}</span>
-          <span v-if="product.compare_price" class="ml-2 text-sm text-gray-400 line-through">
-            {{ formatPrice(product.compare_price) }}
+          <span class="text-xl font-bold text-gray-900">{{ formatPrice(product.is_on_sale ? product.sale_price : product.price) }}</span>
+          <span v-if="product.is_on_sale || product.compare_price" class="ml-2 text-sm text-gray-400 line-through">
+            {{ formatPrice(product.price) }}
           </span>
         </div>
         <button @click="addToCart(product.id)" :disabled="!product.in_stock"
@@ -59,6 +60,7 @@ import { Link, router, usePage } from '@inertiajs/vue3'
 import { useI18n } from '@/composables/useI18n'
 import { useCartModal } from '@/composables/useCartModal'
 import { useWishlist } from '@/composables/useWishlist'
+import SaleCountdown from '@/components/SaleCountdown.vue'
 
 const { t } = useI18n()
 const { openModal } = useCartModal()
@@ -69,7 +71,8 @@ const props = defineProps({ product: Object })
 const { isWishlisted, loading, toggle } = useWishlist(props.product.id)
 
 const isOnSale = computed(() =>
-  props.product.compare_price && parseFloat(props.product.compare_price) > parseFloat(props.product.price)
+  props.product.is_on_sale ||
+  (props.product.compare_price && parseFloat(props.product.compare_price) > parseFloat(props.product.price))
 )
 
 const isLowStock = computed(() =>

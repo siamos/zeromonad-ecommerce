@@ -18,6 +18,7 @@ class Coupon extends Model
         'expires_at',
         'active',
         'theme',
+        'required_segment',
     ];
 
     protected function casts(): array
@@ -47,7 +48,7 @@ class Coupon extends Model
         return $query->where(fn ($q) => $q->where('theme', $theme)->orWhereNull('theme'));
     }
 
-    public function isValid(): bool
+    public function isValid(?User $user = null): bool
     {
         if (! $this->active) {
             return false;
@@ -63,6 +64,16 @@ class Coupon extends Model
 
         if ($this->max_uses && $this->uses_count >= $this->max_uses) {
             return false;
+        }
+
+        if ($this->required_segment) {
+            if (! $user) {
+                return false;
+            }
+
+            if (! $user->tags->contains('name', $this->required_segment)) {
+                return false;
+            }
         }
 
         return true;

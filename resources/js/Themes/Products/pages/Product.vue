@@ -97,6 +97,19 @@
                 {{ alertSent ? t('booking.notify_subscribed') : t('booking.notify_me') }}
               </button>
             </form>
+            <!-- Waitlist -->
+            <div class="mt-3 border-t border-gray-200 pt-3">
+              <p class="text-xs text-gray-500 mb-2">Or join the waitlist to be notified in order:</p>
+              <form v-if="!waitlistJoined" @submit.prevent="joinWaitlist" class="flex gap-2">
+                <input type="email" v-model="waitlistEmail" required placeholder="your@email.com"
+                  class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <button type="submit" :disabled="waitlistSubmitting"
+                  class="bg-gray-700 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-800 transition-colors disabled:opacity-60 cursor-pointer whitespace-nowrap">
+                  Join Waitlist
+                </button>
+              </form>
+              <p v-else class="text-xs text-indigo-600 font-medium">You're on the waitlist!</p>
+            </div>
           </div>
 
           <div v-if="product.sku" class="mt-6 text-sm text-gray-500">{{ t('product.sku') }}: {{ product.sku }}</div>
@@ -162,20 +175,27 @@
         <ReviewForm :product-id="product.id" />
       </div>
     </div>
+
+    <div class="max-w-7xl mx-auto px-4 pb-16">
+      <RecentlyViewed accent-color="text-indigo-600" />
+    </div>
   </Layout>
 </template>
 
 <script setup>
 import { Head, router, usePage } from '@inertiajs/vue3'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Layout from '../Layout.vue'
 import ReviewForm from '../components/ReviewForm.vue'
 import ProductCard from '../components/ProductCard.vue'
+import RecentlyViewed from '@/components/RecentlyViewed.vue'
 import { useI18n } from '@/composables/useI18n'
 import { useCartModal } from '@/composables/useCartModal'
+import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import Breadcrumb from '@/components/Breadcrumb.vue'
 
 const { t } = useI18n()
+const { push: pushRecentlyViewed } = useRecentlyViewed()
 const { openModal } = useCartModal()
 const route = window.route
 const props = defineProps({ product: Object, recommended: Array, schema: { type: Object, default: null } })
@@ -207,11 +227,19 @@ const breadcrumbSchema = computed(() => ({
 }))
 const page = usePage()
 const qty = ref(1)
+
+onMounted(() => {
+  pushRecentlyViewed(props.product)
+})
 const activeImage = ref(props.product.images?.[0] ?? null)
 const lightboxOpen = ref(false)
 const alertEmail = ref('')
 const alertSubmitting = ref(false)
 const alertSent = ref(false)
+
+const waitlistEmail = ref('')
+const waitlistSubmitting = ref(false)
+const waitlistJoined = ref(false)
 
 function prevImage() {
   const imgs = props.product.images ?? []
@@ -253,6 +281,27 @@ async function submitAlert() {
     alertSent.value = true
   } finally {
     alertSubmitting.value = false
+  }
+}
+
+async function joinWaitlist() {
+  waitlistSubmitting.value = true
+  try {
+    await fetch(route('waitlist.join'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+      },
+      body: JSON.stringify({
+        waitlistable_type: 'product',
+        waitlistable_id: props.product.id,
+        email: waitlistEmail.value,
+      }),
+    })
+    waitlistJoined.value = true
+  } finally {
+    waitlistSubmitting.value = false
   }
 }
 </script>
