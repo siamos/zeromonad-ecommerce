@@ -164,6 +164,10 @@
   "checkout.step_details": "Στοιχεία",
   "checkout.step_payment": "Πληρωμή",
   "checkout.secure_badge": "Κρυπτογράφηση SSL 256-bit & Ασφαλής",
+  "checkout.upsell_title": "Μπορεί να σας αρέσει επίσης…",
+  "checkout.upsell_quick_add": "Γρήγορη Προσθήκη",
+  "checkout.upsell_view": "Προβολή →",
+  "checkout.upsell_adding": "Προσθήκη…",
 
   "account.title": "Ο Λογαριασμός μου",
   "account.sign_out": "Αποσύνδεση",
@@ -233,6 +237,7 @@
   "review.title": "Τίτλος",
   "review.optional": "(προαιρετικό)",
   "review.body": "Κριτική",
+  "review.photos": "Φωτογραφίες",
   "review.submit": "Υποβολή Κριτικής",
   "review.submitting": "Υποβολή…",
 

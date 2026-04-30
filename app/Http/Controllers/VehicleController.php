@@ -87,7 +87,7 @@ class VehicleController extends Controller
 
     public function show(Vehicle $vehicle): Response
     {
-        $vehicle->load(['category', 'reviews.user']);
+        $vehicle->load(['category', 'reviews.user', 'reviews.media']);
         $vehicle->loadAvg('reviews', 'rating');
         $vehicle->loadCount('reviews');
 

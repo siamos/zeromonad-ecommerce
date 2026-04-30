@@ -163,6 +163,26 @@
           </div>
         </div>
       </form>
+
+      <!-- Upsell strip -->
+      <div v-if="upsells?.length" class="mt-10">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ t('checkout.upsell_title') }}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div v-for="item in upsells" :key="item.id"
+            class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+            <img v-if="item.image_url" :src="item.image_url" :alt="item.name"
+              class="w-full h-32 object-cover" />
+            <div class="p-3 flex flex-col flex-1">
+              <p class="text-sm font-medium text-gray-900 leading-snug mb-1 line-clamp-2">{{ item.name }}</p>
+              <p class="text-amber-600 font-semibold text-sm mb-3">{{ formatPrice(item.price) }}</p>
+              <a :href="route('product.show', item.slug)"
+                class="mt-auto w-full py-1.5 text-xs font-semibold rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors text-center">
+                {{ t('checkout.upsell_view') }}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </Layout>
 </template>
@@ -183,6 +203,7 @@ const props = defineProps({
   bankAccounts:   Array,
   user:           Object,
   pointsBalance:  { type: Number, default: 0 },
+  upsells:        { type: Array, default: () => [] },
 })
 
 const page = usePage()

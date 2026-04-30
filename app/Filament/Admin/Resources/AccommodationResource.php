@@ -4,6 +4,8 @@ namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\AccommodationResource\Pages;
 use App\Models\Accommodation;
+use App\Services\AiDescriptionService;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -11,7 +13,9 @@ use Filament\Actions\EditAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Actions as SchemaActions;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Utilities\Set;
@@ -88,6 +92,41 @@ class AccommodationResource extends Resource
             ]),
 
             Section::make('Descriptions')->schema([
+                SchemaActions::make([
+                    Action::make('generateDescription')
+                        ->label('Generate with AI')
+                        ->icon('heroicon-o-sparkles')
+                        ->color('gray')
+                        ->form(fn () => [
+                            Forms\Components\Select::make('provider')
+                                ->label('AI Provider')
+                                ->options(fn () => app(AiDescriptionService::class)->availableProviders())
+                                ->required()
+                                ->default(fn () => array_key_first(app(AiDescriptionService::class)->availableProviders()) ?? 'openai'),
+                            Forms\Components\Textarea::make('hint')
+                                ->label('Describe what to emphasize (optional)')
+                                ->rows(2)
+                                ->placeholder('e.g. beachfront villa, sleeps 8, private pool, modern kitchen'),
+                        ])
+                        ->action(function (array $data, callable $schemaGet, callable $schemaSet): void {
+                            $name = $schemaGet('title.en');
+
+                            if (blank($name)) {
+                                Notification::make()->title('Please fill in the property title first.')->warning()->send();
+
+                                return;
+                            }
+
+                            try {
+                                $result = app(AiDescriptionService::class)->generate($name, 'accommodation', $data['provider'], $data['hint'] ?? null);
+                                $schemaSet('short_description.en', $result['short']);
+                                $schemaSet('description.en', $result['long']);
+                                Notification::make()->title('Description generated successfully.')->success()->send();
+                            } catch (\Throwable $e) {
+                                Notification::make()->title('Generation failed: '.$e->getMessage())->danger()->send();
+                            }
+                        }),
+                ]),
                 Tabs::make('Translations')->tabs([
                     Tabs\Tab::make('English')->schema([
                         Forms\Components\TextInput::make('short_description.en')->label('Short Description (EN)')->maxLength(500)->columnSpanFull(),

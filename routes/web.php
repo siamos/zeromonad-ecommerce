@@ -5,6 +5,7 @@ use App\Actions\Cart\RemoveFromCart;
 use App\Actions\Cart\UpdateCartItem;
 use App\Actions\Coupons\ApplyCoupon;
 use App\Actions\GiftCards\RedeemGiftCard;
+use App\Actions\Orders\CancelOrder;
 use App\Actions\Orders\CreateOrder;
 use App\Actions\Orders\RequestReturn;
 use App\Actions\Payments\VerifyPayment;
@@ -15,6 +16,7 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CsvExportController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderController;
@@ -106,6 +108,7 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
     Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
     Route::get('/orders/{order}/tickets/{ticket}', [OrderController::class, 'ticket'])->name('orders.ticket');
     Route::post('/orders/{order}/returns', RequestReturn::class)->name('orders.return');
+    Route::delete('/orders/{order}', CancelOrder::class)->name('orders.cancel');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/addresses', [AddressController::class, 'store'])->name('addresses.store');
     Route::put('/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
@@ -135,6 +138,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 });
+
+// CSV exports (admin + manager)
+Route::middleware('auth')->get('/exports/orders', [CsvExportController::class, 'orders'])->name('exports.orders');
 
 // Locale switcher
 Route::post('/locale', function (Request $request) {

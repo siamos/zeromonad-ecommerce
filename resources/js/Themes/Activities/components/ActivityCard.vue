@@ -78,10 +78,19 @@
           <span class="text-xl font-bold text-gray-900">{{ formatPrice(activity.is_on_sale ? activity.sale_price : activity.price) }}</span>
           <span v-if="activity.is_on_sale" class="ml-2 text-sm text-gray-400 line-through">{{ formatPrice(activity.price) }}</span>
         </div>
-        <Link :href="route('product.show', activity.slug)"
-          class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors">
-          {{ ctaLabel }}
-        </Link>
+        <div class="flex items-center gap-2">
+          <button @click="toggleCompare" :title="isComparing(activity.id) ? 'Remove from comparison' : 'Add to comparison'"
+            class="w-8 h-8 rounded-lg border flex items-center justify-center transition-colors cursor-pointer"
+            :class="isComparing(activity.id) ? 'border-emerald-500 bg-emerald-50 text-emerald-600' : 'border-gray-200 text-gray-400 hover:border-emerald-300 hover:text-emerald-500'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </button>
+          <Link :href="route('product.show', activity.slug)"
+            class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors">
+            {{ ctaLabel }}
+          </Link>
+        </div>
       </div>
     </div>
   </div>
@@ -92,6 +101,7 @@ import { computed } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { useI18n } from '@/composables/useI18n'
 import { useWishlist } from '@/composables/useWishlist'
+import { useComparison } from '@/composables/useComparison'
 import SaleCountdown from '@/components/SaleCountdown.vue'
 
 const props = defineProps({ activity: Object })
@@ -99,6 +109,23 @@ const page = usePage()
 const { t } = useI18n()
 const route = window.route
 const { isWishlisted, loading, toggle } = useWishlist(props.activity.id, 'activity')
+const { isComparing, toggle: compareToggle, canAdd } = useComparison()
+
+function toggleCompare() {
+  if (!isComparing.value(props.activity.id) && !canAdd.value) return
+  compareToggle({
+    id: props.activity.id,
+    name: props.activity.name,
+    price: props.activity.is_on_sale ? props.activity.sale_price : props.activity.price,
+    image_url: props.activity.image_url,
+    slug: props.activity.slug,
+    category: props.activity.category?.name ?? null,
+    location: props.activity.location ?? props.activity.activity_detail?.location ?? null,
+    duration_minutes: props.activity.duration_minutes ?? props.activity.activity_detail?.duration_minutes ?? null,
+    max_participants: props.activity.max_participants ?? null,
+    difficulty: props.activity.difficulty ?? null,
+  })
+}
 
 const isNew = computed(() => {
   if (!props.activity.created_at) { return false }

@@ -11,21 +11,14 @@
     </div>
 
     <form v-else @submit.prevent="submit" class="space-y-4">
-      <input type="hidden" :value="productId" name="product_id" />
-
-      <!-- Star rating -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('review.rating') }}</label>
         <div class="flex gap-1">
-          <button
-            v-for="n in 5"
-            :key="n"
-            type="button"
-            @click="form.rating = n"
+          <button v-for="n in 5" :key="n" type="button" @click="form.rating = n"
             class="text-2xl leading-none transition-colors cursor-pointer"
-            :class="n <= form.rating ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'"
-          >★</button>
+            :class="n <= form.rating ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'">★</button>
         </div>
+        <p v-if="form.errors.rating" class="text-red-500 text-xs mt-1">{{ form.errors.rating }}</p>
       </div>
 
       <div>
@@ -38,19 +31,32 @@
         <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('review.body') }}</label>
         <textarea v-model="form.body" rows="4" required maxlength="2000"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none" />
+        <p v-if="form.errors.body" class="text-red-500 text-xs mt-1">{{ form.errors.body }}</p>
       </div>
 
-      <button type="submit" :disabled="!form.rating || submitting"
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('review.photos') }} <span class="text-gray-400 font-normal">{{ t('review.optional') }}</span></label>
+        <input type="file" multiple accept="image/*" @change="handleImages"
+          class="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
+        <p class="text-xs text-gray-400 mt-1">Up to 5 images, max 5 MB each.</p>
+        <div v-if="previews.length" class="flex gap-2 flex-wrap mt-2">
+          <img v-for="(src, i) in previews" :key="i" :src="src" class="w-16 h-16 object-cover rounded-lg border border-gray-200" />
+        </div>
+        <p v-if="form.errors['images.0']" class="text-red-500 text-xs mt-1">{{ form.errors['images.0'] }}</p>
+      </div>
+
+      <button type="submit" :disabled="!form.rating || form.processing"
         class="px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer">
-        {{ submitting ? t('review.submitting') : t('review.submit') }}
+        {{ form.processing ? t('review.submitting') : t('review.submit') }}
       </button>
     </form>
   </div>
 </template>
 
 <script setup>
-import { Link, router, usePage } from '@inertiajs/vue3'
-import { reactive, ref } from 'vue'
+import { Link } from '@inertiajs/vue3'
+import { useForm } from '@inertiajs/vue3'
+import { ref } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()
@@ -58,15 +64,29 @@ const route = window.route
 
 const props = defineProps({ productId: Number })
 
-const form = reactive({ rating: 0, title: '', body: '' })
-const submitting = ref(false)
+const previews = ref([])
+
+const form = useForm({
+  product_id: props.productId,
+  rating: 0,
+  title: '',
+  body: '',
+  images: [],
+})
+
+function handleImages(e) {
+  const files = Array.from(e.target.files).slice(0, 5)
+  form.images = files
+  previews.value = files.map(f => URL.createObjectURL(f))
+}
 
 function submit() {
-  submitting.value = true
-  router.post(route('reviews.store'), { product_id: props.productId, ...form }, {
+  form.post(route('reviews.store'), {
     preserveScroll: true,
-    onSuccess: () => { form.rating = 0; form.title = ''; form.body = '' },
-    onFinish: () => { submitting.value = false },
+    onSuccess: () => {
+      form.reset()
+      previews.value = []
+    },
   })
 }
 </script>

@@ -136,6 +136,10 @@ class AddToCart
             'extras.*' => 'string',
             'pickup_location_id' => 'nullable|exists:rental_locations,id',
             'dropoff_location_id' => 'nullable|exists:rental_locations,id',
+            'age_breakdown' => 'nullable|array',
+            'age_breakdown.*.label' => 'nullable|string',
+            'age_breakdown.*.price' => 'nullable|numeric',
+            'age_breakdown.*.quantity' => 'nullable|integer|min:0',
         ]);
 
         if ($request->bundle_id) {
@@ -179,6 +183,7 @@ class AddToCart
             'dropoff_location_id' => $request->dropoff_location_id ?: null,
             'dropoff_location_name' => $dropoffLocation?->name,
             'dropoff_fee' => $dropoffLocation ? (float) $dropoffLocation->dropoff_fee : null,
+            'age_breakdown' => $request->age_breakdown ?: null,
         ]);
 
         $this->handle(

@@ -18,7 +18,7 @@ APP_FALLBACK_LOCALE=${APP_FALLBACK_LOCALE:-en}
 
 BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-12}
 
-LOG_CHANNEL=${LOG_CHANNEL:-stack}
+LOG_CHANNEL=${LOG_CHANNEL:-stderr}
 LOG_LEVEL=${LOG_LEVEL:-error}
 
 DB_CONNECTION=mysql
@@ -42,15 +42,21 @@ REDIS_PASSWORD=${REDIS_PASSWORD:-null}
 REDIS_PORT=${REDIS_PORT:-6379}
 
 MAIL_MAILER=${MAIL_MAILER:-log}
+MAIL_SCHEME=${MAIL_SCHEME:-null}
 MAIL_HOST="${MAIL_HOST:-127.0.0.1}"
 MAIL_PORT=${MAIL_PORT:-2525}
 MAIL_USERNAME="${MAIL_USERNAME:-null}"
 MAIL_PASSWORD="${MAIL_PASSWORD:-null}"
-MAIL_ENCRYPTION=${MAIL_ENCRYPTION:-null}
 MAIL_FROM_ADDRESS="${MAIL_FROM_ADDRESS:-hello@zeromonad.com}"
 MAIL_FROM_NAME="\${APP_NAME}"
 
 OPENAI_API_KEY=${OPENAI_API_KEY:-}
+OPENAI_ORGANIZATION=${OPENAI_ORGANIZATION:-}
+ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+
+GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-${APP_URL}/auth/google/callback}
 
 STRIPE_KEY=${STRIPE_KEY:-}
 STRIPE_SECRET=${STRIPE_SECRET:-}
@@ -60,26 +66,17 @@ VIVA_MERCHANT_ID=${VIVA_MERCHANT_ID:-}
 VIVA_API_KEY=${VIVA_API_KEY:-}
 VIVA_CLIENT_ID=${VIVA_CLIENT_ID:-}
 VIVA_CLIENT_SECRET=${VIVA_CLIENT_SECRET:-}
+VIVA_SANDBOX=${VIVA_SANDBOX:-false}
 
 CARDLINK_MERCHANT_ID=${CARDLINK_MERCHANT_ID:-}
 CARDLINK_SHARED_SECRET=${CARDLINK_SHARED_SECRET:-}
+CARDLINK_SANDBOX=${CARDLINK_SANDBOX:-false}
 EOF
 
 if [ -z "$APP_KEY" ]; then
     echo "Generating APP_KEY..."
     php artisan key:generate --force
 fi
-
-echo "Starting supervisor in background..."
-/usr/bin/supervisord -n -c /etc/supervisor/conf.d/laravel.conf &
-SUPERVISOR_PID=$!
-
-trap "kill -TERM $SUPERVISOR_PID 2>/dev/null; wait $SUPERVISOR_PID" TERM INT
-
-sleep 3
-
-echo "Enabling maintenance mode..."
-php artisan down --retry=10 || true
 
 echo "Waiting for MySQL..."
 MAX_TRIES=30
@@ -90,14 +87,14 @@ until php -r "try { new PDO('mysql:host=${DB_HOST:-mysql};port=${DB_PORT:-3306}'
     sleep 2
 done
 
-php artisan config:clear || true
+echo "Running migrations..."
 php artisan migrate --force || echo "WARNING: Migrations failed"
+
+echo "Caching configuration..."
 php artisan config:cache || true
 php artisan route:cache || true
 php artisan view:cache || true
 php artisan storage:link 2>/dev/null || true
 
-php artisan up
-echo "=== Ready ==="
-
-wait $SUPERVISOR_PID
+echo "Starting supervisor..."
+exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/laravel.conf

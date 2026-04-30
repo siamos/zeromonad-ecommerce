@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Accommodation;
+use App\Models\Activity;
 use App\Models\Cart;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\Vehicle;
 use App\PaymentGateways\PaymentGatewayManager;
+use App\Settings\GeneralSettings;
 use App\Settings\PaymentSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,6 +28,64 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index');
         }
 
+        $theme = app(GeneralSettings::class)->active_theme;
+        $cartIds = $cart->items->pluck('product_id')->all();
+
+        $upsells = match ($theme) {
+            'Activities' => Activity::where('status', 'active')
+                ->where('featured', true)
+                ->whereNotIn('id', $cartIds)
+                ->with('media')
+                ->limit(3)
+                ->get()
+                ->map(fn (Activity $a) => [
+                    'id' => $a->id,
+                    'name' => $a->getTranslation('title', 'en'),
+                    'price' => (float) $a->price,
+                    'image_url' => $a->image_url,
+                    'slug' => $a->slug,
+                ]),
+            'Bookings' => Accommodation::where('status', 'active')
+                ->where('featured', true)
+                ->whereNotIn('id', $cartIds)
+                ->with('media')
+                ->limit(3)
+                ->get()
+                ->map(fn (Accommodation $a) => [
+                    'id' => $a->id,
+                    'name' => $a->getTranslation('title', 'en'),
+                    'price' => (float) $a->price_per_night,
+                    'image_url' => $a->image_url,
+                    'slug' => $a->slug,
+                ]),
+            'Cars' => Vehicle::where('status', 'available')
+                ->where('featured', true)
+                ->whereNotIn('id', $cartIds)
+                ->with('media')
+                ->limit(3)
+                ->get()
+                ->map(fn (Vehicle $v) => [
+                    'id' => $v->id,
+                    'name' => "{$v->year} {$v->make} {$v->model}",
+                    'price' => (float) $v->price_per_day,
+                    'image_url' => $v->image_url,
+                    'slug' => $v->slug,
+                ]),
+            default => Product::where('status', 'published')
+                ->where('featured', true)
+                ->whereNotIn('id', $cartIds)
+                ->with('media')
+                ->limit(3)
+                ->get()
+                ->map(fn (Product $p) => [
+                    'id' => $p->id,
+                    'name' => $p->getTranslation('name', 'en'),
+                    'price' => (float) $p->price,
+                    'image_url' => $p->image_url,
+                    'slug' => $p->slug,
+                ]),
+        };
+
         return Inertia::render('Checkout', [
             'cart' => $cart,
             'paymentMethods' => $gateways->available(),
@@ -31,6 +94,7 @@ class CheckoutController extends Controller
                 ->values(),
             'user' => auth()->user()?->only('name', 'email'),
             'pointsBalance' => auth()->user()?->points_balance ?? 0,
+            'upsells' => $upsells->values(),
         ]);
     }
 

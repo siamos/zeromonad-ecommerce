@@ -71,10 +71,19 @@
         <span class="text-sm text-gray-500">
           {{ activity.max_guests ? activity.max_guests + ' ' + t('activity.spots') : '' }}
         </span>
-        <Link :href="route('product.show', activity.slug)"
-          class="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors">
-          {{ t('card.book_stay') }}
-        </Link>
+        <div class="flex items-center gap-2">
+          <button @click="toggleCompare" :title="isComparing(activity.id) ? 'Remove from comparison' : 'Add to comparison'"
+            class="w-8 h-8 rounded-lg border flex items-center justify-center transition-colors cursor-pointer"
+            :class="isComparing(activity.id) ? 'border-amber-500 bg-amber-50 text-amber-600' : 'border-gray-200 text-gray-400 hover:border-amber-300 hover:text-amber-500'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </button>
+          <Link :href="route('product.show', activity.slug)"
+            class="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors">
+            {{ t('card.book_stay') }}
+          </Link>
+        </div>
       </div>
     </div>
   </div>
@@ -86,12 +95,30 @@ import { Link, usePage } from '@inertiajs/vue3'
 import { useI18n } from '@/composables/useI18n'
 import SaleCountdown from '@/components/SaleCountdown.vue'
 import { useWishlist } from '@/composables/useWishlist'
+import { useComparison } from '@/composables/useComparison'
 
 const props = defineProps({ activity: Object })
 const page = usePage()
 const { t } = useI18n()
 const route = window.route
 const { isWishlisted, loading, toggle } = useWishlist(props.activity.id, 'accommodation')
+const { isComparing, toggle: compareToggle, canAdd } = useComparison()
+
+function toggleCompare() {
+  if (!isComparing.value(props.activity.id) && !canAdd.value) return
+  compareToggle({
+    id: props.activity.id,
+    name: props.activity.name,
+    price: props.activity.price_per_night ?? props.activity.price,
+    image_url: props.activity.image_url,
+    slug: props.activity.slug,
+    category: props.activity.category?.name ?? null,
+    location: props.activity.location ?? null,
+    bedrooms: props.activity.bedrooms ?? null,
+    bathrooms: props.activity.bathrooms ?? null,
+    max_guests: props.activity.max_guests ?? null,
+  })
+}
 
 const isNew = computed(() => {
   if (!props.activity.created_at) { return false }

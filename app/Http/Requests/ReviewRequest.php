@@ -21,6 +21,8 @@ class ReviewRequest extends FormRequest
             'rating' => 'required|integer|min:1|max:5',
             'title' => 'nullable|string|max:150',
             'body' => 'required|string|max:2000',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|max:5120',
         ];
     }
 }

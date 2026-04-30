@@ -76,7 +76,29 @@
           </div>
         </template>
 
-        <div>
+        <!-- Age / group tier counters -->
+        <div v-if="ageTiers.length" class="space-y-2">
+          <p class="text-sm font-medium text-gray-700">{{ t('booking.participants') }}</p>
+          <div v-if="minParticipants > 1" class="text-xs text-amber-600">
+            Minimum {{ minParticipants }} participants required
+          </div>
+          <div v-for="tier in ageTiers" :key="tier.label" class="flex items-center justify-between">
+            <div>
+              <span class="text-sm text-gray-700 font-medium">{{ tier.label }}</span>
+              <span class="text-xs text-gray-400 ml-2">{{ formatPrice(tier.price) }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" @click="decrementTier(tier)"
+                class="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-emerald-500 hover:text-emerald-600 transition-colors cursor-pointer text-sm">−</button>
+              <span class="w-6 text-center font-semibold text-gray-900 text-sm">{{ tierCounts[tier.label] ?? 0 }}</span>
+              <button type="button" @click="incrementTier(tier)"
+                class="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-emerald-500 hover:text-emerald-600 transition-colors cursor-pointer text-sm">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plain participants counter (no age tiers) -->
+        <div v-else>
           <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('booking.participants') }}</label>
           <div v-if="minParticipants > 1" class="text-xs text-amber-600 mb-2">
             Minimum {{ minParticipants }} participants required
@@ -91,13 +113,21 @@
         </div>
 
         <div class="border-t border-gray-100 pt-4 space-y-1">
-          <div class="flex justify-between text-sm text-gray-600">
+          <template v-if="ageTiers.length">
+            <div v-for="tier in ageTiers" :key="tier.label"
+              v-show="(tierCounts[tier.label] ?? 0) > 0"
+              class="flex justify-between text-sm text-gray-600">
+              <span>{{ tier.label }} × {{ tierCounts[tier.label] ?? 0 }}</span>
+              <span>{{ formatPrice(tier.price * (tierCounts[tier.label] ?? 0)) }}</span>
+            </div>
+          </template>
+          <div v-else class="flex justify-between text-sm text-gray-600">
             <span>{{ formatPrice(effectivePrice) }} × {{ form.quantity }}</span>
             <span>{{ formatPrice(effectivePrice * form.quantity) }}</span>
           </div>
           <div class="flex justify-between font-bold text-gray-900">
             <span>{{ t('booking.total') }}</span>
-            <span>{{ formatPrice(effectivePrice * form.quantity) }}</span>
+            <span>{{ formatPrice(tierTotal) }}</span>
           </div>
         </div>
 
@@ -129,11 +159,10 @@ const page = usePage()
 const today = new Date().toISOString().split('T')[0]
 
 const hasSlots = computed(() => props.availableSlots.length > 0 || props.activity.activity_slots?.length > 0)
-
 const selectedSlot = computed(() => props.availableSlots.find(s => s.id === form.slot_id) ?? null)
-
 const minParticipants = computed(() => props.activity.min_participants ?? 1)
 const effectivePrice = computed(() => props.activity.price_per_person ?? props.activity.price)
+const ageTiers = computed(() => Array.isArray(props.activity.age_pricing) && props.activity.age_pricing.length ? props.activity.age_pricing : [])
 
 const maxQty = computed(() => {
   if (selectedSlot.value) return selectedSlot.value.spots_remaining
@@ -153,9 +182,36 @@ const minBookingDate = computed(() => {
 const bookingClosed = computed(() => false)
 
 const submitDisabled = computed(() => {
-  if (hasSlots.value) return !form.slot_id
+  if (hasSlots.value && !form.slot_id) return true
+  if (ageTiers.value.length && tierTotalQty.value < minParticipants.value) return true
   return false
 })
+
+// Per-tier counts (label → count)
+const tierCounts = reactive({})
+
+const tierTotalQty = computed(() => Object.values(tierCounts).reduce((s, n) => s + n, 0))
+
+const tierTotal = computed(() => {
+  if (ageTiers.value.length) {
+    return ageTiers.value.reduce((s, tier) => s + (parseFloat(tier.price) * (tierCounts[tier.label] ?? 0)), 0)
+  }
+  return effectivePrice.value * form.quantity
+})
+
+function incrementTier(tier) {
+  const current = tierCounts[tier.label] ?? 0
+  if (tierTotalQty.value < maxQty.value) {
+    tierCounts[tier.label] = current + 1
+  }
+}
+
+function decrementTier(tier) {
+  const current = tierCounts[tier.label] ?? 0
+  if (current > 0) {
+    tierCounts[tier.label] = current - 1
+  }
+}
 
 const form = reactive({
   bookable_type: 'activity',
@@ -188,6 +244,12 @@ function submit() {
   const payload = { ...form }
   if (selectedSlot.value) {
     payload.booking_date = selectedSlot.value.date
+  }
+  if (ageTiers.value.length) {
+    payload.quantity = tierTotalQty.value
+    payload.age_breakdown = ageTiers.value
+      .filter(tier => (tierCounts[tier.label] ?? 0) > 0)
+      .map(tier => ({ label: tier.label, price: tier.price, quantity: tierCounts[tier.label] }))
   }
   router.post(route('cart.add'), payload, {
     preserveScroll: true,

@@ -99,7 +99,7 @@ class ProductController extends Controller
 
     public function show(Product $product): Response
     {
-        $product->load(['category', 'activityDetail', 'tags', 'reviews.user', 'activitySlots']);
+        $product->load(['category', 'activityDetail', 'tags', 'reviews.user', 'reviews.media', 'activitySlots']);
         $product->loadAvg('reviews', 'rating');
         $product->loadCount('reviews');
 

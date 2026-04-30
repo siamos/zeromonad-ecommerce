@@ -1,6 +1,6 @@
 # ==============================================
 # ZeroMonad Ecommerce - Production Dockerfile
-# PHP 8.4 | Laravel 13 | Single container
+# PHP 8.4 | Laravel 12 | Single container
 # ==============================================
 
 # ---------------------------------------------
@@ -79,6 +79,7 @@ RUN apt-get update && apt-get upgrade -y \
         php8.4-gd \
         php8.4-intl \
         php8.4-redis \
+        php8.4-pcntl \
         php8.4-imagick \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 

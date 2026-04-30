@@ -45,10 +45,19 @@
             {{ formatPrice(product.price) }}
           </span>
         </div>
-        <button @click="addToCart(product.id)" :disabled="!product.in_stock"
-          class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors cursor-pointer">
-          {{ product.in_stock ? t('card.add_to_cart') : t('card.out_of_stock') }}
-        </button>
+        <div class="flex items-center gap-2">
+          <button @click="toggleCompare" :title="isComparing(product.id) ? 'Remove from comparison' : 'Add to comparison'"
+            class="w-8 h-8 rounded-lg border flex items-center justify-center transition-colors cursor-pointer"
+            :class="isComparing(product.id) ? 'border-indigo-500 bg-indigo-50 text-indigo-600' : 'border-gray-200 text-gray-400 hover:border-indigo-300 hover:text-indigo-500'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </button>
+          <button @click="addToCart(product.id)" :disabled="!product.in_stock"
+            class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors cursor-pointer">
+            {{ product.in_stock ? t('card.add_to_cart') : t('card.out_of_stock') }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -60,6 +69,7 @@ import { Link, router, usePage } from '@inertiajs/vue3'
 import { useI18n } from '@/composables/useI18n'
 import { useCartModal } from '@/composables/useCartModal'
 import { useWishlist } from '@/composables/useWishlist'
+import { useComparison } from '@/composables/useComparison'
 import SaleCountdown from '@/components/SaleCountdown.vue'
 
 const { t } = useI18n()
@@ -69,6 +79,20 @@ const page = usePage()
 
 const props = defineProps({ product: Object })
 const { isWishlisted, loading, toggle } = useWishlist(props.product.id)
+const { isComparing, toggle: compareToggle, canAdd } = useComparison()
+
+function toggleCompare() {
+  if (!isComparing.value(props.product.id) && !canAdd.value) return
+  compareToggle({
+    id: props.product.id,
+    name: props.product.name,
+    price: props.product.is_on_sale ? props.product.sale_price : props.product.price,
+    image_url: props.product.image_url,
+    slug: props.product.slug,
+    category: props.product.category?.name ?? null,
+    sku: props.product.sku ?? null,
+  })
+}
 
 const isOnSale = computed(() =>
   props.product.is_on_sale ||

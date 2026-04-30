@@ -93,7 +93,7 @@ class AccommodationController extends Controller
 
     public function show(Accommodation $accommodation): Response
     {
-        $accommodation->load(['category', 'reviews.user', 'blockedDates']);
+        $accommodation->load(['category', 'reviews.user', 'reviews.media', 'blockedDates']);
         $accommodation->loadAvg('reviews', 'rating');
         $accommodation->loadCount('reviews');
 

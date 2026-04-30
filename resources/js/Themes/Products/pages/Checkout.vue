@@ -183,6 +183,26 @@
           </div>
         </div>
       </form>
+
+      <!-- Upsell strip -->
+      <div v-if="upsells?.length" class="mt-10">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ t('checkout.upsell_title') }}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div v-for="item in upsells" :key="item.id"
+            class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+            <img v-if="item.image_url" :src="item.image_url" :alt="item.name"
+              class="w-full h-32 object-cover" />
+            <div class="p-3 flex flex-col flex-1">
+              <p class="text-sm font-medium text-gray-900 leading-snug mb-1 line-clamp-2">{{ item.name }}</p>
+              <p class="text-indigo-600 font-semibold text-sm mb-3">{{ formatPrice(item.price) }}</p>
+              <button @click="quickAdd(item)" :disabled="adding === item.id"
+                class="mt-auto w-full py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 transition-colors cursor-pointer">
+                {{ adding === item.id ? t('checkout.upsell_adding') : t('checkout.upsell_quick_add') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </Layout>
 </template>
@@ -202,6 +222,7 @@ const props = defineProps({
   paymentMethods: Array,
   bankAccounts: Array,
   pointsBalance: { type: Number, default: 0 },
+  upsells: { type: Array, default: () => [] },
 })
 
 const page = usePage()
@@ -237,6 +258,16 @@ function formatPrice(price) {
     style: 'currency',
     currency: page.props.currency ?? 'EUR',
   }).format(price)
+}
+
+const adding = ref(null)
+
+function quickAdd(item) {
+  adding.value = item.id
+  router.post(route('cart.add'), { product_id: item.id, quantity: 1 }, {
+    preserveScroll: true,
+    onFinish: () => { adding.value = null },
+  })
 }
 
 function submitOrder() {

@@ -204,6 +204,7 @@
   </div>
   <CartSuccessModal />
   <PromotionPopup />
+  <CompareBar />
 </template>
 
 <script setup>
@@ -212,6 +213,7 @@ import { Link, router } from '@inertiajs/vue3'
 import { useI18n } from '@/composables/useI18n'
 import CartSuccessModal from '@/components/CartSuccessModal.vue'
 import PromotionPopup from '@/components/PromotionPopup.vue'
+import CompareBar from '@/components/CompareBar.vue'
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue'
 
 const { t } = useI18n()

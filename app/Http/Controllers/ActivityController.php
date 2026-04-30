@@ -95,7 +95,7 @@ class ActivityController extends Controller
 
     public function show(Activity $activity): Response
     {
-        $activity->load(['category', 'reviews.user']);
+        $activity->load(['category', 'reviews.user', 'reviews.media']);
         $activity->loadAvg('reviews', 'rating');
         $activity->loadCount('reviews');
 

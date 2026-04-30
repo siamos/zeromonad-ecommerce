@@ -10,6 +10,8 @@ services:
             APP_KEY: "${APP_KEY}"
             APP_DEBUG: "false"
             APP_URL: "${APP_URL}"
+            LOG_CHANNEL: stderr
+            LOG_LEVEL: "${LOG_LEVEL:-error}"
             DB_HOST: mysql
             DB_DATABASE: "${DB_DATABASE:-zeromonad}"
             DB_USERNAME: "${DB_USERNAME}"
@@ -18,12 +20,33 @@ services:
             QUEUE_CONNECTION: redis
             CACHE_STORE: redis
             SESSION_DRIVER: redis
+            SESSION_SECURE_COOKIE: "true"
+            MAIL_MAILER: "${MAIL_MAILER:-smtp}"
+            MAIL_SCHEME: "${MAIL_SCHEME:-tls}"
+            MAIL_HOST: "${MAIL_HOST}"
+            MAIL_PORT: "${MAIL_PORT:-587}"
+            MAIL_USERNAME: "${MAIL_USERNAME}"
+            MAIL_PASSWORD: "${MAIL_PASSWORD}"
+            MAIL_FROM_ADDRESS: "${MAIL_FROM_ADDRESS}"
             OPENAI_API_KEY: "${OPENAI_API_KEY}"
+            ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
+            GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID}"
+            GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET}"
+            GOOGLE_REDIRECT_URI: "${APP_URL}/auth/google/callback"
             STRIPE_KEY: "${STRIPE_KEY}"
             STRIPE_SECRET: "${STRIPE_SECRET}"
             STRIPE_WEBHOOK_SECRET: "${STRIPE_WEBHOOK_SECRET}"
+            VIVA_MERCHANT_ID: "${VIVA_MERCHANT_ID}"
+            VIVA_API_KEY: "${VIVA_API_KEY}"
+            VIVA_CLIENT_ID: "${VIVA_CLIENT_ID}"
+            VIVA_CLIENT_SECRET: "${VIVA_CLIENT_SECRET}"
+            VIVA_SANDBOX: "${VIVA_SANDBOX:-false}"
+            CARDLINK_MERCHANT_ID: "${CARDLINK_MERCHANT_ID}"
+            CARDLINK_SHARED_SECRET: "${CARDLINK_SHARED_SECRET}"
+            CARDLINK_SANDBOX: "${CARDLINK_SANDBOX:-false}"
         volumes:
             - storage_data:/var/www/html/storage/app
+            - logs_data:/var/www/html/storage/logs
         ports:
             - '80:80'
         depends_on:
@@ -62,5 +85,6 @@ services:
 
 volumes:
     storage_data:
+    logs_data:
     mysql_data:
     redis_data:

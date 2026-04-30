@@ -121,9 +121,11 @@
         <!-- Right: booking sidebar -->
         <div class="lg:col-span-1">
           <div class="sticky top-6">
-            <div class="mb-4 text-3xl font-bold text-gray-900">
-              {{ formatPrice(activity.price) }}<span class="text-base font-normal text-gray-500"> {{ t('activity.per_person') }}</span>
+            <div class="mb-2 text-3xl font-bold text-gray-900">
+              {{ formatPrice(activity.is_on_sale ? activity.sale_price : activity.price) }}<span class="text-base font-normal text-gray-500"> {{ t('activity.per_person') }}</span>
+              <span v-if="activity.is_on_sale" class="ml-2 text-lg font-normal text-gray-400 line-through">{{ formatPrice(activity.price) }}</span>
             </div>
+            <SaleCountdown v-if="activity.is_on_sale && activity.sale_ends_at" :ends-at="activity.sale_ends_at" class="mb-4" />
 
             <div v-if="spotsRemaining !== null && spotsRemaining !== undefined" class="mb-4">
               <div v-if="spotsRemaining === 0" class="flex items-center gap-2 text-red-600">
@@ -161,6 +163,11 @@
               </div>
               <p v-if="review.title" class="font-semibold text-gray-800 text-sm mb-1">{{ review.title }}</p>
               <p class="text-gray-600 text-sm leading-relaxed">{{ review.body }}</p>
+              <div v-if="review.image_urls?.length" class="flex gap-2 flex-wrap mt-3">
+                <a v-for="(img, i) in review.image_urls" :key="i" :href="img.url" target="_blank">
+                  <img :src="img.thumb" class="w-16 h-16 object-cover rounded-xl border border-gray-200 hover:opacity-90 transition" />
+                </a>
+              </div>
             </div>
           </div>
           <p v-else class="text-gray-400 text-sm">{{ t('activity.no_reviews') }}</p>
@@ -192,6 +199,7 @@ import RecentlyViewed from '@/components/RecentlyViewed.vue'
 import { useI18n } from '@/composables/useI18n'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import Breadcrumb from '@/components/Breadcrumb.vue'
+import SaleCountdown from '@/components/SaleCountdown.vue'
 
 const { t } = useI18n()
 const { push: pushRecentlyViewed } = useRecentlyViewed()

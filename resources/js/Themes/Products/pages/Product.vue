@@ -65,12 +65,13 @@
           </div>
           <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ product.name }}</h1>
 
-          <div class="flex items-baseline gap-3 mb-6">
-            <span class="text-3xl font-bold text-gray-900">{{ formatPrice(product.price) }}</span>
-            <span v-if="product.compare_price" class="text-lg text-gray-400 line-through">
-              {{ formatPrice(product.compare_price) }}
+          <div class="flex items-baseline gap-3 mb-2">
+            <span class="text-3xl font-bold text-gray-900">{{ formatPrice(product.is_on_sale ? product.sale_price : product.price) }}</span>
+            <span v-if="product.is_on_sale || product.compare_price" class="text-lg text-gray-400 line-through">
+              {{ formatPrice(product.price) }}
             </span>
           </div>
+          <SaleCountdown v-if="product.is_on_sale && product.sale_ends_at" :ends-at="product.sale_ends_at" class="mb-4" />
 
           <p class="text-gray-600 leading-relaxed mb-6">{{ product.description }}</p>
 
@@ -167,6 +168,11 @@
               </div>
               <p v-if="review.title" class="font-semibold text-gray-800 text-sm mb-1">{{ review.title }}</p>
               <p class="text-gray-600 text-sm leading-relaxed">{{ review.body }}</p>
+              <div v-if="review.image_urls?.length" class="flex gap-2 flex-wrap mt-3">
+                <a v-for="(img, i) in review.image_urls" :key="i" :href="img.url" target="_blank">
+                  <img :src="img.thumb" class="w-16 h-16 object-cover rounded-lg border border-gray-200 hover:opacity-90 transition" />
+                </a>
+              </div>
             </div>
           </div>
           <p v-else class="text-gray-400 text-sm">{{ t('product.no_reviews') }}</p>
@@ -193,6 +199,7 @@ import { useI18n } from '@/composables/useI18n'
 import { useCartModal } from '@/composables/useCartModal'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import Breadcrumb from '@/components/Breadcrumb.vue'
+import SaleCountdown from '@/components/SaleCountdown.vue'
 
 const { t } = useI18n()
 const { push: pushRecentlyViewed } = useRecentlyViewed()

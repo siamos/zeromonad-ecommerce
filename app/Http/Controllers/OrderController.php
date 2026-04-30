@@ -25,7 +25,7 @@ class OrderController extends Controller
                 ->paginate(15);
 
             return Inertia::render('Account', [
-                'user' => $user->only('id', 'name', 'email', 'points_balance'),
+                'user' => $user->only('id', 'name', 'email', 'points_balance', 'referral_code'),
                 'orders' => $orders,
                 'addresses' => $user->addresses()->orderByDesc('is_default')->get(),
             ]);
@@ -47,7 +47,7 @@ class OrderController extends Controller
         $pointsHistory = $user->pointsTransactions()->latest()->take(10)->get();
 
         return Inertia::render('Account', [
-            'user' => $user->only('id', 'name', 'email', 'points_balance'),
+            'user' => $user->only('id', 'name', 'email', 'points_balance', 'referral_code'),
             'wishlistItems' => $wishlistItems,
             'pointsHistory' => $pointsHistory,
             'addresses' => $user->addresses()->orderByDesc('is_default')->get(),

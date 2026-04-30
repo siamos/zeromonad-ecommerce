@@ -40,7 +40,7 @@ class SubmitReview
             $reviewableId = $request->integer('product_id');
         }
 
-        $this->handle(
+        $review = $this->handle(
             reviewableType: $reviewableType,
             reviewableId: $reviewableId,
             userId: $request->user()->id,
@@ -48,6 +48,12 @@ class SubmitReview
             body: $request->string('body'),
             title: $request->input('title'),
         );
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $review->addMedia($image)->toMediaCollection('review-images');
+            }
+        }
 
         return back()->with('success', 'Your review has been submitted and is awaiting approval.');
     }

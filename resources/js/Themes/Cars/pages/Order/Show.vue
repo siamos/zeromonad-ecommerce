@@ -32,6 +32,10 @@
             class="text-sm text-slate-700 hover:text-slate-900 underline">
             Download Invoice
           </a>
+          <button v-if="canCancel" @click="cancelOrder"
+            class="text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+            Cancel Order
+          </button>
           <button v-if="canRequestReturn"
             @click="showReturnModal = true"
             class="text-sm px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition">
@@ -171,7 +175,7 @@
 </template>
 
 <script setup>
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import Layout from '../../Layout.vue'
 
@@ -188,6 +192,17 @@ function ticketForItem(itemId) {
 const canRequestReturn = computed(() =>
   props.order.status === 'delivered' && props.order.payment_status === 'paid'
 )
+
+const canCancel = computed(() => {
+  if (!['pending', 'processing'].includes(props.order.status)) { return false }
+  const hoursSinceOrder = (Date.now() - new Date(props.order.created_at)) / 36e5
+  return hoursSinceOrder < 24
+})
+
+function cancelOrder() {
+  if (!confirm('Are you sure you want to cancel this order? This cannot be undone.')) { return }
+  router.delete(route('account.orders.cancel', props.order.id), { preserveScroll: false })
+}
 
 function submitReturn() {
   returnForm.post(route('account.orders.return', props.order.id), {

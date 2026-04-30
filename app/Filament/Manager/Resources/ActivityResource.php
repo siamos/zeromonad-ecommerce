@@ -103,6 +103,25 @@ class ActivityResource extends Resource
                     ->prefix('€')
                     ->label('Price Per Person')
                     ->helperText('When set, overrides base price for group calculations'),
+                Forms\Components\Repeater::make('age_pricing')
+                    ->label('Age / Group Pricing Tiers')
+                    ->helperText('Optional. When set, the booking form shows a counter per tier instead of a single participants counter.')
+                    ->schema([
+                        Forms\Components\TextInput::make('label')
+                            ->label('Label')
+                            ->placeholder('e.g. Adult, Child, Senior')
+                            ->required(),
+                        Forms\Components\TextInput::make('price')
+                            ->label('Price')
+                            ->numeric()
+                            ->prefix('€')
+                            ->required(),
+                    ])
+                    ->columns(2)
+                    ->addActionLabel('Add Tier')
+                    ->orderColumn(false)
+                    ->columnSpanFull()
+                    ->defaultItems(0),
             ])->columns(2),
 
             Section::make('Volume Pricing')
